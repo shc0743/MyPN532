@@ -1,0 +1,27 @@
+
+
+a, button, summary {
+    cursor: pointer;
+}
+
+a:any-link, a[href] {
+    color: blue;
+}
+a:active {
+    color: red;
+}
+a {
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: revert;
+}
+a[disabled] {
+    color: #a0a0a0;
+}
+
+*:disabled, *[disabled] {
+    cursor: not-allowed !important;
+}
+
+

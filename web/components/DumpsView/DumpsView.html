@@ -1,0 +1,25 @@
+<ActivityView v-deep v-bind="$attrs">
+    <ActivityTitle>选择转储文件</ActivityTitle>
+    <ActivityBody style="display: flex; flex-direction: column;">
+        <div class="fileSelector" v-deep>
+            <ElCard>
+                <template #header>
+                    选择转储文件
+                </template>
+            
+                <ElCheckbox v-model="dumpfileSelectAll" :disabled="!canContinue" label="全选"></ElCheckbox>
+                <ElCheckboxGroup :disabled="dumpfileSelectAll" v-model="dumpfile"
+                    style="width: 100%; box-sizing: border-box; display: flex; flex-direction: column;">
+                    <ElCheckbox v-for="item in dumpfiles" :label="item" :value="item" :disabled="!canContinue"></ElCheckbox>
+                </ElCheckboxGroup>
+            </ElCard>
+            
+            <div style="display: flex; margin-top: 1em;">
+                <ElButton :disabled="!canContinue" style="flex: 1;" @click="selectit(true)">创建</ElButton>
+                <ElButton :disabled="!canContinue || (dumpfile.length != 1) || dumpfileSelectAll" type="primary" plain style="flex: 1;" @click="selectit">编辑</ElButton>
+                <ElButton :disabled="!canContinue || dumpfiles.length == 0 || (dumpfile.length == 0 && (!dumpfileSelectAll))" type="danger" plain style="flex: 1;" @click="deleteit">删除</ElButton>
+                <ElButton :disabled="!canContinue" @click="userLoadData">刷新列表</ElButton>
+            </div>
+        </div>
+    </ActivityBody>
+</ActivityView>

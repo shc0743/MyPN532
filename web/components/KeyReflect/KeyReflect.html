@@ -1,0 +1,22 @@
+<ActivityView v-deep v-bind="$attrs">
+    <ActivityTitle v-show="!hideTitle">映射密钥到扇区</ActivityTitle>
+    <ActivityBody>
+        <form action="#" @submit.prevent="selectit">
+            <ElCard>
+                <template #header>
+                    选择密钥文件
+                </template>
+
+                <ElCheckbox v-model="keyfileSelectAll" label="全选" :disabled="!canContinue"></ElCheckbox>
+                <ElCheckboxGroup :disabled="keyfileSelectAll" v-model="keyfile" style="width: 100%; box-sizing: border-box; display: flex; flex-direction: column;">
+                    <ElCheckbox v-for="item in keyfiles" :label="item" :value="item" :disabled="!canContinue"></ElCheckbox>
+                </ElCheckboxGroup>
+            </ElCard>
+
+            <div style="display: flex; margin-top: 1em;">
+                <ElButton :disabled="!canContinue" type="primary" plain style="flex: 1;" @click="selectit">继续</ElButton>
+                <ElButton :disabled="!canContinue" @click="userLoadData">刷新列表</ElButton>
+            </div>
+        </form>
+    </ActivityBody>
+</ActivityView>

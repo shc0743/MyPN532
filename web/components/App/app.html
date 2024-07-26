@@ -1,0 +1,202 @@
+<link rel="stylesheet" href="./modules/element-plus/element-plus.css">
+<div style="position: absolute; inset: 0;">
+<style>*{ font-family: Consolas, NSimsun, monospace;}</style>
+<style>
+main>>> {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* justify-content: center; */
+    margin-left: auto; margin-right: auto;
+    width: 100%; height: 100%;
+}
+
+main[v-deep] > div {
+    display: flex;
+    flex-direction: column;
+    /* align-items: center; */
+    justify-content: center;
+    margin-left: auto; margin-right: auto;
+    /* text-align: center; */
+    width: 100%; height: 100%;
+    /* max-width: 500px; */
+    border: 0;
+}
+main[v-deep] .error-view {
+    text-align: center;
+}
+
+@font-face {
+    font-family: SDK_SC_Web;
+    font-display: swap;
+    src: url("./SDK_SC_Web.ttf");
+}
+</style>
+
+<!-- <resizable-widget v-deep open ref="box"> -->
+    <style>#myApp resizable-widget>>> { min-width: 360px; min-height: 330px; }</style>
+    <div v-if="0" slot="widget-caption" style="display: flex; justify-content: space-between;">
+        <span>
+            <span>{{username}}<span v-if="!!username">@</span></span>
+            <span>PN532</span>
+            <span v-if="!is_connected"> - <b style="color: red">未连接</b></span>
+        </span>
+        <div style="font-family: 'SDK_SC_Web', monospace; display: flex;">
+            <div v-show="networkTimeout >= 0" :style="networkTimeout_style">{{networkTimeout}}ms</div>
+            <!-- <a href="#" style="margin-left: 0.5em;" v-show="!!username" @click.prevent="logout" data-exclude-bindmove>退出</a> -->
+        </div>
+    </div>
+    <!-- <div style="font-family: 'SDK_SC_Web', Consolas, monospace; display: flex;"> -->
+        <div v-show="networkTimeout >= 0" :style="networkTimeout_style">
+            <span style="display: inline-block; background-color: var(--ball-color); aspect-ratio: 1; width: 0.5em; height: 0.5em; border-radius: 50%; margin-right: 0.5em;"></span>
+            <span>{{networkTimeout===-1?'--':(networkCongestion?((networkTimeout<1000)?999:networkTimeout):networkTimeout)}}ms</span>
+        </div>
+    <!-- </div> -->
+
+    <main v-deep>
+        <div class="error-view" v-deep v-if="current_page === '404'">
+            <h1>404 - Not Found</h1>
+            <a href="#/">回到主页</a>
+        </div>
+
+        <div class="error-view" v-deep v-if="!is_connected" style="position: absolute; inset: 0; background-color: #ffffff; z-index: 1199; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0.9;">
+            <div style="font-size: x-large; font-weight: bold;">应用程序未连接</div>
+        </div>
+        
+        <div class="welcome-view" v-deep v-show="current_page === 'main'">
+            <style>
+                .welcome-view>>> {
+                    display: grid;
+                    place-items: center;
+                }
+                .welcome-view-container>>> {
+                    display: grid;
+                    grid-template-columns: 1fr 1fr;
+                    place-items: center;
+                }
+                @media screen and (min-width: 600px) {
+                    .welcome-view-container>>> {
+                        grid-template-columns: 1fr 1fr 1fr 1fr;
+                    }
+                }
+                .welcome-view>>> .my-card>>> {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    justify-content: center;
+
+                    border: 1px solid gray;
+                    border-radius: 10px;
+                    padding: 0.5em;
+                    margin: 0.5em;
+                    cursor: pointer;
+                    background: var(--background);
+                    transition: .1s;
+                    color: var(--color);
+                    text-decoration: none;
+
+                    --background: #ffffff;
+                    --color: #000000;
+                }
+                .welcome-view>>> .my-card>>>:hover {
+                    --background: #f0f0f0;
+                }
+                .welcome-view>>> .my-card>>>:active {
+                    --background: #d0d0d0;
+                }
+            </style>
+
+            <div class="welcome-view-container" v-deep>
+                <a v-if="advancedUser" href="#/tag/read" class="my-card" tabindex="0" role="link" v-deep>
+                    <img width="100" src="/assets/MCT-drawable/read_tag.png">
+                    <span>读标签</span>
+                </a>
+                
+                <a v-if="advancedUser" href="#/tag/write" class="my-card" tabindex="0" role="link" v-deep>
+                    <img width="100" src="/assets/MCT-drawable/write_tag.png">
+                    <span>写标签</span>
+                </a>
+                
+                <a v-if="advancedUser" href="#/dumps/" class="my-card" tabindex="0" role="link" v-deep>
+                    <img width="100" src="/assets/MCT-drawable/edit_dump.png">
+                    <span>编辑转储文件</span>
+                </a>
+                
+                <a v-if="advancedUser" href="#/tag/keys/" class="my-card" tabindex="0" role="link" v-deep>
+                    <img width="100" src="/assets/MCT-drawable/edit_keys.png">
+                    <span>编辑密钥文件</span>
+                </a>
+
+                <div v-if="!advancedUser"></div>
+                
+                <a href="#/ndef/" class="my-card" tabindex="0" role="link" v-deep>
+                    <img width="100" src="/assets/MCT-drawable/edit_dump.png">
+                    <span>{{advancedUser?'NDEF编辑器':'编辑标签'}}</span>
+                </a>
+                
+                <a v-if="advancedUser" href="#/launchcmd/" class="my-card" tabindex="0" role="link" v-deep>
+                    <img width="100" src="/assets/webimg/cmd.png">
+                    <span>命令提示符</span>
+                </a>
+                
+                <a v-if="advancedUser" href="#/utilities/" class="my-card" tabindex="0" role="link" v-deep>
+                    <img width="100" src="/assets/MCT-drawable/tools.png">
+                    <span>工具</span>
+                </a>
+
+                <a href="#/settings/" class="my-card" tabindex="0" role="link" v-deep>
+                    <img width="100" src="/assets/MCT-drawable/preferences.png">
+                    <span>选项</span>
+                </a>
+            </div>
+        </div>
+
+        <ActivityView v-if="current_page === 'tag/read' || current_page === 'tag/write'" v-deep>
+            <ActivityTitle>选择标签类型</ActivityTitle>
+            <ActivityBody>
+                <div>当前支持的标签类型：</div>
+                <div style="display: flex; margin-top: 1em;"><ElButton @click="userChooseTagType('mfclassic')" type="primary" size="large" plain style="flex: 1;">Mifare Classic</ElButton></div>
+                <div style="display: flex; margin-top: 1em;"><ElButton @click="userChooseTagType('ntag')" type="primary" size="large" plain style="flex: 1;">Mifare Ultralight / NTag21x</ElButton></div>
+                <div style="display: flex; margin-top: 1em;"><ElButton type="primary" size="large" plain style="flex: 1;" :disabled="true">更多标签类型正在开发中...</ElButton></div>
+            </ActivityBody>
+        </ActivityView>
+
+        <TagReadMfclassic v-if="current_page === 'tag/mfclassic/read'" v-deep />
+        <TagWriteMfclassic v-if="current_page === 'tag/mfclassic/write'" v-deep />
+        <TagReadNtag v-if="current_page === 'tag/ntag/read'" v-deep />
+        <TagWriteNtag v-if="current_page === 'tag/ntag/write'" v-deep />
+        <KeyfileEditor v-if="current_page === 'tag/keys'" v-deep />
+        <DumpsView v-if="current_page === 'dumps'" v-deep />
+        <DumpEditor v-if="current_page === 'dump'" v-deep />
+        <NdefCenter v-if="current_page === 'ndef'" v-deep />
+
+        <Settings v-if="current_page === 'settings'" v-deep />
+        <AboutPage v-if="current_page === 'about'" v-deep />
+
+        <UtilitiesView :current_page="current_page" />
+
+        <dialog ref="advancedUserDlg" style="width: 400px;">
+            <div style="font-size: x-large; font-weight: bold; margin-bottom: 0.5em; padding-bottom: 0.5em; border-bottom: 1px solid;">请选择应用程序模式</div>
+            <div>
+                <div>
+                    <ElRadio value="0" size="large" v-model="advancedUserOptions">基本模式</ElRadio>
+                    <blockquote>
+                        使用基础的标签读写功能，用于读写NDEF格式的数据，适合一般用户使用
+                    </blockquote>
+                </div>
+                <div>
+                    <ElRadio value="1" size="large" v-model="advancedUserOptions">高级模式</ElRadio>
+                    <blockquote>
+                        使用高级的标签读写功能，用于读写十六进制的数据，支持使用密钥文件，适合高级用户使用
+                    </blockquote>
+                </div>
+            </div>
+            <div style="color: #606060;">您随时可以在设置中更改此选项。</div>
+            <div style="margin-top: 0.5em; padding-top: 0.5em; border-top: 1px solid; display: flex;"><ElButton type="primary" plain style="flex: 1" @click="applyAdvancedUserOptions">完成</ElButton></div>
+        </dialog>
+
+
+    </main>
+<!-- </resizable-widget> -->
+
+</div>

@@ -1,0 +1,53 @@
+<ActivityView v-deep>
+    <ActivityTitle v-deep :inert="(page > 0 && page < 100)">读标签</ActivityTitle>
+    <style>[inert]>>>{opacity: 0.5;}</style>
+    <ActivityBody style="display: flex; flex-direction: column; overflow: hidden;">
+        <template v-if="page === 0">
+            <div style="display: flex; align-items: center;" v-show="!use_mfoc">
+                <label>扇区范围</label>
+                <span style="display: flex; margin: 0 1em; align-items: center;">
+                    <ElInput style="flex: 1;" type="number" :disabled="sectorAll" v-model="sectorStart" :min="0" :max="255" />
+                    <span style="margin: 0 0.5em;">-</span>
+                    <ElInput style="flex: 1;" type="number" :disabled="sectorAll" v-model="sectorEnd" :min="0" :max="255" />
+                </span>
+                <label style="cursor: pointer;">
+                    <ElCheckbox v-model="sectorAll" />
+                    <span style="margin-left: 0.5em;">全部</span>
+                </label>
+            </div>
+            <div style="margin-bottom: 0.5em; display: flex; align-items: center;">
+                <label style="cursor: pointer;"><ElCheckbox v-model="use_mfoc" />&nbsp;使用mfoc</label>
+            </div>
+            <KeyReflect :hide-title="true" :required="!use_mfoc" @selected="startRead"></KeyReflect>
+        </template>
+        <template v-if="page === 1">
+            <div>已选择 {{userkeyfile.length}} 个密钥文件</div>
+            <div><b>已发送请求，正在等待服务器响应...</b></div>
+        </template>
+        <template v-if="page === 3">
+            <div style="display: flex; align-items: center; justify-content: center; border-bottom: 1px solid; padding-bottom: 0.5em; margin-bottom: 1em;">
+                <span>已选择 {{userkeyfile.length}} 个密钥文件</span>
+                <ElButton text size="small" @click="show_advanced = false" v-if="show_advanced" style="margin-left: 0.5em;">显示更少...</ElButton>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" v-show="show_advanced">
+                <ElProgress :text-inside="true" :stroke-width="25" :percentage="read_percent" status="success" v-if="show_advanced" />
+                <div style="border: 1px solid; border-radius: 10px; padding: 10px; overflow: auto; white-space: pre; flex: 1; margin-top: 0.5em;" ref="logDiv">
+                    <div style="position: sticky; top: 0; left: 0; background-color: #fff; margin-bottom: 0.5em; padding-bottom: 0.5em; border-bottom: 1px solid gray;">操作日志</div>
+                </div>
+            </div>
+            <div style="flex: 1; display: grid; place-items: center;" v-if="!show_advanced">
+                <div style="text-align: center;">
+                    <div style="margin-bottom: 1em;">正在读取标签...</div>
+                    <ElProgress type="circle" :percentage="read_percent" :status="read_percent >= 100 ? 'success' : undefined" />
+                    <div style="margin-top: 1em;"><ElButton text size="small" @click="show_advanced = true">显示更多...</ElButton></div>
+                </div>
+            </div>
+        </template>
+        <template v-if="page >= 10001 && page < 11000">
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div style="color: red; font-size: x-large; text-align: center; margin-bottom: 1em; padding-bottom: 0.5em; border-bottom: 1px solid;">出现错误！(错误代码：{{page}}) <ElButton text @click="retryAction">重试</ElButton></div>
+                <div v-text="errorText" style="flex: 1; overflow: auto; white-space: pre;"></div>
+            </div>
+        </template>
+    </ActivityBody>
+</ActivityView>

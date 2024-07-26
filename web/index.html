@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="zh-cn">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PN532</title>
+    <meta name="description" content="PN532">
+    <script type="importmap">{
+      "imports": {
+        "@/": "./",
+        "vue": "./modules/vue/vue.esm-browser.js",
+        "element-plus": "./modules/element-plus/index.full.mjs.js",
+        "element-plus/": "./modules/element-plus/",
+        "icons-vue": "./modules/element-plus/icons-vue.min.js",
+        "util/": "./modules/util/"
+      }
+    }</script>
+    <link rel="stylesheet" href="./vapp.css">
+</head>
+
+<body>
+    <div id="app"></div>
+    <div id="myApp"></div>
+
+    <script src="./modules/es-module-shims/es-module-shims.js"></script>
+    <script src="./sha256.js"></script>
+    <script src="./userdata.js"></script>
+    <script type="module" src="./replacelocationtoken.js"></script>
+    <script type="module" src="./vapp.esm.js"></script>
+</body>
+
+</html>

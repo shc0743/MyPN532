@@ -1,0 +1,9 @@
+<ActivityView v-deep v-bind="$attrs">
+    <ActivityTitle>编辑转储文件<span v-if="file" style="margin-left: 0.5em;">({{file}})</span></ActivityTitle>
+    <ActivityBody v-if="file">
+
+    </ActivityBody>
+    <ActivityBody v-else>
+        正在等待指定文件名...
+    </ActivityBody>
+</ActivityView>

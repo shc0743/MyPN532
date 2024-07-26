@@ -1,0 +1,65 @@
+<ActivityView v-deep v-bind="$attrs">
+    <ActivityTitle>编辑密钥文件</ActivityTitle>
+    <ActivityBody style="display: flex; flex-direction: column;">
+        <div class="fileSelector" v-deep v-if="!targetFile">
+            <ElCard>
+                <template #header>
+                    选择密钥文件
+                </template>
+            
+                <ElCheckbox v-model="keyfileSelectAll" label="全选" :disabled="!canContinue"></ElCheckbox>
+                <ElCheckboxGroup :disabled="keyfileSelectAll" v-model="keyfile"
+                    style="width: 100%; box-sizing: border-box; display: flex; flex-direction: column;">
+                    <ElCheckbox v-for="item in keyfiles" :label="item" :value="item" :disabled="!canContinue"></ElCheckbox>
+                </ElCheckboxGroup>
+            </ElCard>
+            
+            <div style="display: flex; margin-top: 1em;">
+                <ElButton :disabled="!canContinue" style="flex: 1;" @click="selectit(true)">创建</ElButton>
+                <ElButton :disabled="!canContinue || (keyfile.length != 1) || keyfileSelectAll" type="primary" plain style="flex: 1;" @click="selectit">编辑</ElButton>
+                <ElButton :disabled="!canContinue || keyfiles.length == 0 || (keyfile.length == 0 && (!keyfileSelectAll))" type="danger" plain style="flex: 1;" @click="deleteit">删除</ElButton>
+                <ElButton :disabled="!canContinue" @click="userLoadData">刷新列表</ElButton>
+            </div>
+        </div>
+
+        <div class="fileEditor" v-deep v-if="targetFile" v-loading="!isTargetFileLoaded">
+            <div class="editorHead">编辑 {{targetFile}}</div>
+            <iframe class="editor" ref="editorSandbox" sandbox="allow-same-origin" srcdoc="&lt;!DOCTYPE html>&lt;html>&lt;head>&lt;meta charset=utf-8>&lt;style>*{font-family:Consolas,NSimsun,monospace}body{height:100%;white-space:pre;overflow:auto;margin:0}html{height:100%;overflow:hidden}&lt;/style>&lt;/head>&lt;body contenteditable>&lt;/body>正在加载...&lt;/html>"></iframe>
+            <div class="editorControls">
+                <ElButton type="primary" plain style="flex: 1;" @click="savefile(true)">保存</ElButton>
+                <ElButton type="danger" plain style="flex: 1;" @click="savefile(false)">放弃</ElButton>
+            </div>
+        </div>
+
+        <style>
+        .fileEditor>>> {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        .fileEditor>>> .editorHead {
+            padding: 0.5em;
+            border-bottom: 1px solid gray;
+            margin-bottom: 0.5em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .fileEditor>>> .editor {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border: 0;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        .fileEditor>>> .editorControls {
+            padding-top: 0.5em;
+            border-top: 1px solid gray;
+            margin-top: 1em;
+            display: flex;
+        }
+        </style>
+    </ActivityBody>
+</ActivityView>

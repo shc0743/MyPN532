@@ -1,0 +1,49 @@
+<ActivityView v-deep v-bind="$attrs">
+    <ActivityTitle>选项</ActivityTitle>
+    <ActivityBody v-loading="isLoading">
+        <ElCard>
+            <style>.custom-tree-node>>> {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding-right: 8px;
+            }.device-name-more-expand>>>{
+                user-select: all;
+            }</style>
+            <template #header>NFC 设备</template>
+            <div style="margin-bottom: 0.5em;">
+                <b>默认设备</b><span>:&nbsp;</span>
+                <ElTooltip effect="dark" trigger="focus" :content="(cfgDefaultDevice ? parsedDefaultDevice[1] : '请前往设置')" placement="bottom-start">
+                    <span tabindex="0">
+                        <span v-text="(cfgDefaultDevice ? parsedDefaultDevice[0] : '未设置')" v-deep class="device-name-more-expand"></span>
+                    </span>
+                </ElTooltip>
+                <a href="#" style="margin-left: 1em;" @click.prevent="editDeviceName">改名</a>
+                <a href="#" style="margin-left: 1em;" @click.prevent="setDefaultDevice(null)">清除</a>
+            </div>
+            <div><b>设备列表:&nbsp;</b><a href="#" @click.prevent="loadDevList">扫描设备</a></div>
+            <ElTree :data="nfcDevicesComputed" :props="defaultProps">
+                <template #default="{ node, data }">
+                    <span class="custom-tree-node" v-deep>
+                        <span>{{ node.label }}</span>
+                        <span style="float: right;" v-if="data.isRoot">
+                            <a href="#" @click.prevent.stop="testDevice(data)" style="margin-right: 1.5em;">测试</a>
+                            <a href="#" @click.prevent.stop="setDefaultDevice(data)">设为默认</a>
+                        </span>
+                    </span>
+                </template>
+                <template #empty>点击「扫描设备」以加载设备列表</template>
+            </ElTree>   
+        </ElCard>
+        <ElCard style="margin-top: 1em;">
+            <template #header>应用程序模式</template>
+            <div>
+                <!-- <b>当前模式:</b>
+                <span style="margin: 0 0.5em;">{{isAdvancedUser?'高级模式':'基本模式'}}</span> -->
+                <!-- 消灭bug的最快方法就是砍掉出现bug的功能 -->
+                <a href="#" @click.prevent="changeappmode">更改...</a>
+            </div>
+        </ElCard>
+    </ActivityBody>
+</ActivityView>

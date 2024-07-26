@@ -1,0 +1,35 @@
+
+                            case 'pipe-created':
+                                switch (data.pipe_type) {
+                                    case 'pipeKeyFile':
+                                        this.read_percent = 15;
+                                        break;
+                                
+                                    default:
+                                        break;
+                                }
+                                break;
+                            
+                            case 'keyfile-preload-finished':
+                                this.read_percent = 8;
+                                break;
+                            case 'keyfile-check-started':
+                                this.read_percent = 11;
+                                break;
+                            case 'key-scanned':
+                                this.read_percent = 25;
+                                break;
+                            case 'key-processed':
+                                this.read_percent = 30;
+                                if (log) {
+                                    const el = document.createElement('div');
+                                    el.innerText = `密钥处理完成，密钥为：\n    ${data.result?.join?.(',')}`;
+                                    log.append(el);
+                                }
+                                break;
+                            case 'card-read-ended':
+                                this.read_percent = 95;
+                                break;
+                            case 'card-read':
+                                this.read_percent = 98;
+                                break;

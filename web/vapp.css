@@ -1,0 +1,4 @@
+@import url(./default-ui.css);
+
+*[hidden] { display: none !important; }
+
