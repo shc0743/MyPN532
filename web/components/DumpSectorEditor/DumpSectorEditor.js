@@ -141,7 +141,7 @@ class MySectorEditor extends HTMLElement {
         let dataIndex = -1;
         for (let data of this.#data) {
             ++dataIndex;
-            if (this.#uppercase) data = data.toUpperCase();
+            data = data['to' + (this.#uppercase ? 'Upp' : 'Low') + 'erCase']();
 
             const blockView = document.createElement('div');
             blockView.className = 'block-view';
