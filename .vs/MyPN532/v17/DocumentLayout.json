@@ -3,6 +3,14 @@
   "WorkspaceRootPath": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\",
   "Documents": [
     {
+      "AbsoluteMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\MyPN532.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|solutionrelative:MyPN532\\MyPN532.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|solutionrelative:MyPN532\\server.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\PN532_libnfc_Host.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|solutionrelative:PN532_libnfc_Host\\PN532_libnfc_Host.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
@@ -14,24 +22,12 @@
       "RelativeMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|solutionrelative:PN532_libnfc_Host\\mfclassic.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|solutionrelative:MyPN532\\server.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|solutionrelative:MyPN532\\server.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\MyPN532.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|solutionrelative:MyPN532\\MyPN532.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server-ws.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|solutionrelative:MyPN532\\server-ws.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\scan-device.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|solutionrelative:PN532_libnfc_Host\\scan-device.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     }
   ],
   "DocumentGroupContainers": [
@@ -41,7 +37,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 4,
+          "SelectedChildIndex": 9,
           "Children": [
             {
               "$type": "Bookmark",
@@ -52,21 +48,12 @@
               "Name": "ST:128:0:{1fc202d4-d401-403c-9834-5b218574bb67}"
             },
             {
-              "$type": "Document",
-              "DocumentIndex": 2,
-              "Title": "mfclassic.cpp",
-              "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\mfclassic.cpp",
-              "RelativeDocumentMoniker": "PN532_libnfc_Host\\mfclassic.cpp",
-              "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\mfclassic.cpp",
-              "RelativeToolTip": "PN532_libnfc_Host\\mfclassic.cpp",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-07-26T14:32:57.61Z",
-              "EditorCaption": ""
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 1,
+              "DocumentIndex": 3,
               "Title": "nfc-mfclassic.c",
               "DocumentMoniker": "D:\\software\\Program\\source\\projects\\nfc\\libnfc-build\\source\\utils\\nfc-mfclassic.c",
               "RelativeDocumentMoniker": "..\\..\\projects\\nfc\\libnfc-build\\source\\utils\\nfc-mfclassic.c",
@@ -74,12 +61,11 @@
               "RelativeToolTip": "..\\..\\projects\\nfc\\libnfc-build\\source\\utils\\nfc-mfclassic.c",
               "ViewState": "AQIAAAAAAAAAAAAAAAAAAFQBAAAFAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000423|",
-              "WhenOpened": "2024-07-26T13:51:48.672Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-07-26T13:51:48.672Z"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
+              "DocumentIndex": 2,
               "Title": "PN532_libnfc_Host.cpp",
               "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\PN532_libnfc_Host.cpp",
               "RelativeDocumentMoniker": "PN532_libnfc_Host\\PN532_libnfc_Host.cpp",
@@ -91,8 +77,16 @@
               "EditorCaption": ""
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{cce594b6-0c39-4442-ba28-10c64ac7e89f}"
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "mfclassic.cpp",
+              "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\mfclassic.cpp",
+              "RelativeDocumentMoniker": "PN532_libnfc_Host\\mfclassic.cpp",
+              "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\mfclassic.cpp",
+              "RelativeToolTip": "PN532_libnfc_Host\\mfclassic.cpp",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-07-26T14:32:57.61Z"
             },
             {
               "$type": "Document",
@@ -108,7 +102,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 1,
               "Title": "server.cpp",
               "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server.cpp",
               "RelativeDocumentMoniker": "MyPN532\\server.cpp",
@@ -116,11 +110,12 @@
               "RelativeToolTip": "MyPN532\\server.cpp",
               "ViewState": "AQIAADsBAAAAAAAAAAAiwFIBAAAgAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-07-20T17:25:03.191Z"
+              "WhenOpened": "2024-07-20T17:25:03.191Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 5,
               "Title": "server.h",
               "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server.h",
               "RelativeDocumentMoniker": "MyPN532\\server.h",
@@ -132,27 +127,16 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 0,
               "Title": "MyPN532.cpp",
               "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\MyPN532.cpp",
               "RelativeDocumentMoniker": "MyPN532\\MyPN532.cpp",
               "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\MyPN532.cpp",
               "RelativeToolTip": "MyPN532\\MyPN532.cpp",
-              "ViewState": "AQIAADABAAAAAAAAAAAQwDwBAAAhAAAA",
+              "ViewState": "AQIAAGkAAAAAAAAAAAAAAIUAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-07-20T16:52:28.331Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "scan-device.cpp",
-              "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\scan-device.cpp",
-              "RelativeDocumentMoniker": "PN532_libnfc_Host\\scan-device.cpp",
-              "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\scan-device.cpp",
-              "RelativeToolTip": "PN532_libnfc_Host\\scan-device.cpp",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAgAAAAXAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-07-26T12:02:31.343Z"
+              "WhenOpened": "2024-07-20T16:52:28.331Z",
+              "EditorCaption": ""
             }
           ]
         }

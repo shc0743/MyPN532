@@ -134,7 +134,7 @@ main[v-deep] .error-view {
                     <span>{{advancedUser?'NDEF编辑器':'编辑标签'}}</span>
                 </a>
                 
-                <a v-if="advancedUser" href="#/launchcmd/" class="my-card" tabindex="0" role="link" v-deep>
+                <a v-if="advancedUser" href="#/launchcmd/" class="my-card" tabindex="0" role="link" v-deep @click.prevent="launchcmd">
                     <img width="100" src="/assets/webimg/cmd.png">
                     <span>命令提示符</span>
                 </a>

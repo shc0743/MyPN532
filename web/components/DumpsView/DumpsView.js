@@ -11,6 +11,7 @@ const data = {
             dumpfiles: [],
             dumpfile: [],
             dumpfileSelectAll: false,
+            compare: Symbol(),
 
         }
     },
@@ -43,6 +44,13 @@ const data = {
         },
         async selectit(isCreate) {
             if (!this.canContinue) return ElMessage.error('现在不能继续');
+            if (isCreate === this.compare) {
+                const url = new URL('/dumpfile-compare.html', location.href);
+                url.searchParams.set('a', this.dumpfile[0]);
+                url.searchParams.set('b', this.dumpfile[1]);
+                window.open(url, '_blank', 'width=1000,height=600');
+                return;
+            }
             if (isCreate === true) try {
                 const filename = (await ElMessageBox.prompt('请输入文件名:', '创建或打开文件')).value;
                 const pattern = /([\:\*\?"\<\>\|]|(^aux$|^con$|^com[0-9]$|^nul$))/ig // windows
@@ -57,7 +65,7 @@ const data = {
                 // this.targetFile = this.dumpfile[0];
                 location.hash = '#/dump/' + encodeURIComponent(this.dumpfile[0]);
             }
-            
+
         },
         deleteit() {
             if (!this.canContinue) return ElMessage.error('现在不能继续');
@@ -88,6 +96,30 @@ const data = {
         userLoadData() {
             if (!this.canContinue) return;
             this.loadFiles();
+        },
+        async processFileDrop(ev) {
+            try {
+                const files = ev.dataTransfer.files;
+                if (files.length < 1) throw '拖动的不是文件';
+                await ElMessageBox.confirm('要添加 ' + files.length + ' 个文件吗？已存在的文件将被覆盖。', '添加文件', {
+                    confirmButtonText: '添加',
+                    cancelButtonText: '不添加',
+                    type: 'info',
+                });
+                for (const i of files) {
+                    const url = new URL('/api/v4.8/api/dumpfile', location.href);
+                    url.searchParams.append('filename', i.name);
+                    const v = await fetch(url, {
+                        method: 'PATCH',
+                        body: i
+                    })
+                    if (!v.ok) throw '保存' + i.name + '时遇到了HTTP错误: ' + v.status + v.statusText;
+                }
+                ElMessage.success('保存成功!');
+                this.userLoadData();
+            } catch (err) {
+                ElMessage.error('处理失败:' + err);
+            }
         },
 
     },

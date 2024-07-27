@@ -107,6 +107,13 @@ const data = {
                 }).catch(() => { }).finally(() => location.reload());
             })
         },
+        launchcmd() {
+            fetch('/api/v4.8/native/launchcmd', { method: 'POST' })
+                .then(v => {
+                    if (!v.ok) throw v.status + v.statusText;
+                    ElMessage.success('成功!')
+                }).catch(e => ElMessage.error('失败: ' + e));  
+        },
         
     },
 

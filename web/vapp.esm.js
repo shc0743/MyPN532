@@ -6,6 +6,14 @@ main JavaScript file for Web-File-Explorer
 
 import { reportFatalError } from './error-reporter.js';
 
+try {
+    await import('./loadmono.js');
+    console.log('[monaco-editor]', 'loaded successfully');
+}
+catch (error) {
+    throw reportFatalError(error);
+}
+
 const updateLoadStat = (globalThis.ShowLoadProgress) ? globalThis.ShowLoadProgress : function () { };
 
 globalThis.appInstance_ = {};

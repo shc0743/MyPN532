@@ -62,42 +62,56 @@ const data = {
             }
             const thus = this;
             const func = async () => {
-                if (this.$refs.editorSandbox.contentWindow.document.readyState !== 'complete') {
-                    return this.$refs.editorSandbox.addEventListener('load', func);
-                }
+                // if (this.$refs.editorSandbox.contentWindow.document.readyState !== 'complete') {
+                //     return this.$refs.editorSandbox.addEventListener('load', func);
+                // }
                 const text = await (async () => {
                     const resp = await fetch('/api/v4.8/api/keyfile', { method: 'POST', body: this.targetFile });
                     if (resp.status === 404) return '';
                     return await resp.text();
                 })();
-                if (this.$refs.editorSandbox.contentWindow.document.readyState !== 'complete') {
-                    return this.$refs.editorSandbox.addEventListener('load', func);
-                }
-                this.$refs.editorSandbox.contentWindow.document.body.innerText = text;
+                // if (this.$refs.editorSandbox.contentWindow.document.readyState !== 'complete') {
+                //     return this.$refs.editorSandbox.addEventListener('load', func);
+                // }
+                // this.$refs.editorSandbox.contentWindow.document.body.innerText = text;
                 this.isTargetFileLoaded = true;
-                this.$refs.editorSandbox.contentWindow.addEventListener('keydown', function (ev) {
-                    if (ev.ctrlKey && !ev.altKey && !ev.shiftKey && (ev.key === 'S' || ev.key === 's')) {
-                        ev.preventDefault();
-                        ev.returnValue = false;
-                        thus.savefile(true);
-                        return false;
-                    }
-                })
-                this.$refs.editorSandbox.contentWindow.addEventListener('paste', function cleanPaste(event) {
-                    event.preventDefault();
-                    let paste = event.clipboardData.getData('text');
+                // this.$refs.editorSandbox.contentWindow.addEventListener('keydown', function (ev) {
+                //     if (ev.ctrlKey && !ev.altKey && !ev.shiftKey && (ev.key === 'S' || ev.key === 's')) {
+                //         ev.preventDefault();
+                //         ev.returnValue = false;
+                //         thus.savefile(true);
+                //         return false;
+                //     }
+                // })
+                // this.$refs.editorSandbox.contentWindow.addEventListener('paste', function cleanPaste(event) {
+                //     event.preventDefault();
+                //     let paste = event.clipboardData.getData('text');
 
-                    const selection = thus.$refs.editorSandbox.contentWindow.getSelection();
-                    if (!selection || !selection.rangeCount) return false;
-                    selection.deleteFromDocument();
-                    selection.getRangeAt(0).insertNode(document.createTextNode(paste));
-                    selection.collapseToEnd();
+                //     const selection = thus.$refs.editorSandbox.contentWindow.getSelection();
+                //     if (!selection || !selection.rangeCount) return false;
+                //     selection.deleteFromDocument();
+                //     selection.getRangeAt(0).insertNode(document.createTextNode(paste));
+                //     selection.collapseToEnd();
+                // });
+                this.$refs.editor.value = text;
+                this.$refs.editor.editor.addAction({
+                    id: 'saveFile',
+                    label: '保存文件',
+                    keybindings: [
+                        monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS
+                    ],
+                    contextMenuGroupId: 'navigation',
+                    contextMenuOrder: 0.5,
+                    run: () => {
+                        this.savefile(true);
+                    }
                 });
             };
             this.$nextTick(() => this.$nextTick(() => this.$nextTick(() => this.$nextTick(() => this.$nextTick(() => {
-                if (this.$refs.editorSandbox.contentWindow.document.readyState !== 'complete') {
-                    this.$refs.editorSandbox.addEventListener('load', func);
-                } else queueMicrotask(func);
+                // if (this.$refs.editorSandbox.contentWindow.document.readyState !== 'complete') {
+                //     this.$refs.editorSandbox.addEventListener('load', func);
+                // } else
+                    queueMicrotask(func);
             })))));
         },
         deleteit() {
@@ -142,7 +156,7 @@ const data = {
             url.searchParams.append('filename', this.targetFile);
             fetch(url, {
                 method: 'PATCH',
-                body: this.$refs.editorSandbox.contentWindow.document.body.innerText
+                body: this.$refs.editor.value//this.$refs.editorSandbox.contentWindow.document.body.innerText
             }).then(v => {
                 if (v.ok) ElMessage.success('保存成功！');
                 else throw v.status + v.statusText;
@@ -154,6 +168,30 @@ const data = {
         userLoadData() {
             if (!this.canContinue) return;
             this.loadFiles();
+        },
+        async processFileDrop(ev) {
+            try {
+                const files = ev.dataTransfer.files;
+                if (files.length < 1) throw '拖动的不是文件';
+                await ElMessageBox.confirm('要添加 ' + files.length + ' 个文件吗？已存在的文件将被覆盖。', '添加文件', {
+                    confirmButtonText: '添加',
+                    cancelButtonText: '不添加',
+                    type: 'info',
+                });
+                for (const i of files) {
+                    const url = new URL('/api/v4.8/api/keyfile', location.href);
+                    url.searchParams.append('filename', i.name);
+                    const v = await fetch(url, {
+                        method: 'PATCH',
+                        body: i
+                    })
+                    if (!v.ok) throw '保存' + i.name + '时遇到了HTTP错误: ' + v.status + v.statusText;
+                }
+                ElMessage.success('保存成功!');
+                this.userLoadData();
+            } catch (err) {
+                ElMessage.error('处理失败:' + err);
+            }
         },
 
     },

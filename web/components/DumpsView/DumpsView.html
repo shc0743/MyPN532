@@ -1,10 +1,10 @@
 <ActivityView v-deep v-bind="$attrs">
     <ActivityTitle>选择转储文件</ActivityTitle>
-    <ActivityBody style="display: flex; flex-direction: column;">
+    <ActivityBody style="display: flex; flex-direction: column;" @dragover.prevent @drop.prevent="processFileDrop">
         <div class="fileSelector" v-deep>
             <ElCard>
                 <template #header>
-                    选择转储文件
+                    选择转储文件 (拖放到此处可以快速添加)
                 </template>
             
                 <ElCheckbox v-model="dumpfileSelectAll" :disabled="!canContinue" label="全选"></ElCheckbox>
@@ -15,8 +15,9 @@
             </ElCard>
             
             <div style="display: flex; margin-top: 1em;">
-                <ElButton :disabled="!canContinue" style="flex: 1;" @click="selectit(true)">创建</ElButton>
+                <ElButton :disabled="!canContinue" style="flex: 1;" @click="selectit(true)" v-show="false">创建</ElButton>
                 <ElButton :disabled="!canContinue || (dumpfile.length != 1) || dumpfileSelectAll" type="primary" plain style="flex: 1;" @click="selectit">编辑</ElButton>
+                <ElButton :disabled="!canContinue || (dumpfile.length != 2) || dumpfileSelectAll" style="flex: 1;" @click="selectit(compare)">比较</ElButton>
                 <ElButton :disabled="!canContinue || dumpfiles.length == 0 || (dumpfile.length == 0 && (!dumpfileSelectAll))" type="danger" plain style="flex: 1;" @click="deleteit">删除</ElButton>
                 <ElButton :disabled="!canContinue" @click="userLoadData">刷新列表</ElButton>
             </div>

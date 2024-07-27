@@ -1,0 +1,90 @@
+<div v-deep v-bind="$attrs" class="host">
+    <div v-deep class="sectors-container">
+        <div v-for="(item, index) in sectors" v-deep class="sector-view">
+            <div v-deep class="sector-header">扇区 {{index}}</div>
+            <my-mf-sector-editor class="blocks-container sector-editor" v-deep :data="item">
+                <!-- <div v-for="(data, dataIndex) in item" v-deep class="block-view">
+                    <span v-if="(dataIndex === 0)" class="token token-trailer">{{data}}</span>
+                    <template v-else-if="(dataIndex === 3)">
+                        <span class="token token-keya">{{data.substring(0, 12)}}</span>
+                        <span class="token token-acl">{{data.substring(12, 18)}}</span>
+                        <span class="token token-normal">{{data.substring(18, 20)}}</span>
+                        <span class="token token-keyb">{{data.substring(20)}}</span>
+                    </template>
+                    <span v-else class="token token-normal">{{data}}</span>
+                </div> -->
+            </my-mf-sector-editor>
+        </div>
+    </div>
+
+    <div v-deep class="examples">
+        <b style="color: #737373; margin-right: 0.5em;">图例:</b>
+        <span class="token token-trailer">UID&厂商信息</span>
+        <span class="token token-value-block">值块</span>
+        <span class="token token-keya">密钥A</span>
+        <span class="token token-keyb">密钥B</span>
+        <span class="token token-acl">访问控制</span>
+    </div>
+</div>
+
+<style>
+.host>>> {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+.sectors-container>>> {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: auto;
+}
+.sector-view>>> {
+    border-bottom: 1px dashed gray;
+}
+.sector-view[v-deep]+.sector-view>>> {
+    margin-top: 0.5em;
+}
+.sector-header>>> {
+    font-family: Consolas, monospace;
+}
+.examples>>> {
+    display: flex;
+    margin-top: 0.5em;
+}
+.sector-editor>>> {
+    min-width: 16em;
+}
+.sector-editor>>>:focus-visible, .sector-editor>>>:focus {
+    outline-color: #a0cfff;
+}
+
+.host>>> .token {
+    color: var(--token-color);
+}
+.examples>>> .token+.token {
+    margin-left: 0.5em;
+    border-left: 1px solid #7f7f7f;
+    padding-left: 0.5em;
+}
+.host>>> .token.token-normal {
+    --token-color: #111111;
+}
+.host>>> .token.token-trailer {
+    --token-color: #9438f5;
+}
+.host>>> .token.token-value-block {
+    --token-color: #caca14;
+}
+.host>>> .token.token-keya {
+    --token-color: #73F672;
+}
+.host>>> .token.token-keyb {
+    --token-color: #368505;
+}
+.host>>> .token.token-acl {
+    --token-color: #D7722C;
+}
+</style>

@@ -1,10 +1,10 @@
 <ActivityView v-deep v-bind="$attrs">
     <ActivityTitle>编辑密钥文件</ActivityTitle>
-    <ActivityBody style="display: flex; flex-direction: column;">
+    <ActivityBody style="display: flex; flex-direction: column;" @dragover.prevent @drop.prevent="processFileDrop">
         <div class="fileSelector" v-deep v-if="!targetFile">
             <ElCard>
                 <template #header>
-                    选择密钥文件
+                    选择密钥文件 (拖放到此处可以快速添加)
                 </template>
             
                 <ElCheckbox v-model="keyfileSelectAll" label="全选" :disabled="!canContinue"></ElCheckbox>
@@ -24,7 +24,8 @@
 
         <div class="fileEditor" v-deep v-if="targetFile" v-loading="!isTargetFileLoaded">
             <div class="editorHead">编辑 {{targetFile}}</div>
-            <iframe class="editor" ref="editorSandbox" sandbox="allow-same-origin" srcdoc="&lt;!DOCTYPE html>&lt;html>&lt;head>&lt;meta charset=utf-8>&lt;style>*{font-family:Consolas,NSimsun,monospace}body{height:100%;white-space:pre;overflow:auto;margin:0}html{height:100%;overflow:hidden}&lt;/style>&lt;/head>&lt;body contenteditable>&lt;/body>正在加载...&lt;/html>"></iframe>
+            <!-- <iframe class="editor" ref="editorSandbox" sandbox="allow-same-origin" srcdoc="&lt;!DOCTYPE html>&lt;html>&lt;head>&lt;meta charset=utf-8>&lt;style>*{font-family:Consolas,NSimsun,monospace}body{height:100%;white-space:pre;overflow:auto;margin:0}html{height:100%;overflow:hidden}&lt;/style>&lt;/head>&lt;body contenteditable>&lt;/body>正在加载...&lt;/html>"></iframe> -->
+            <monaco-editor v-deep ref="editor"></monaco-editor>
             <div class="editorControls">
                 <ElButton type="primary" plain style="flex: 1;" @click="savefile(true)">保存</ElButton>
                 <ElButton type="danger" plain style="flex: 1;" @click="savefile(false)">放弃</ElButton>
@@ -36,6 +37,7 @@
             display: flex;
             flex-direction: column;
             flex: 1;
+            overflow: hidden;
         }
         .fileEditor>>> .editorHead {
             padding: 0.5em;
@@ -59,6 +61,9 @@
             border-top: 1px solid gray;
             margin-top: 1em;
             display: flex;
+        }
+        monaco-editor>>> {
+            flex: 1;
         }
         </style>
     </ActivityBody>

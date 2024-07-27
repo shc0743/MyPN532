@@ -1,9 +1,48 @@
 <ActivityView v-deep v-bind="$attrs">
     <ActivityTitle>编辑转储文件<span v-if="file" style="margin-left: 0.5em;">({{file}})</span></ActivityTitle>
-    <ActivityBody v-if="file">
-
+    <ActivityBody v-if="file" style="display: flex; flex-direction: column; overflow: hidden;">
+        <!-- <monaco-editor v-deep ref="editor" :language="'mifare_hex'"></monaco-editor> -->
+        <div style="text-align: right;">
+            <ElRadio v-model="editorType" value="hex">十六进制</ElRadio>
+            <ElRadio v-model="editorType" value="asc">ASCII</ElRadio>
+            <!-- <ElRadio v-model="editorType" value="utf">UTF-8</ElRadio> -->
+        </div>
+        <DumpSectorEditor :data="editdata" :type="editorType" ref="myEditor"></DumpSectorEditor>
+        <div class="editorControls" v-deep>
+            <ElButton type="primary" plain style="flex: 1;" @click="savefile(true)">保存</ElButton>
+            <ElButton type="danger" plain style="flex: 1;" @click="savefile(false)">放弃</ElButton>
+        </div>
     </ActivityBody>
+    <!-- <ActivityBody v-else-if="file && (isCompare)" style="display: flex; flex-direction: column; overflow: hidden;">
+        <monaco-editor v-deep ref="editor" :language="'mifare_hex'" :create="'createDiffEditor'" :options="{
+          value: '',
+          roundedSelection: false,
+          autoIndent: true,
+          readOnly: true,
+          diffWordWrap: true,
+          wordWrap: 'on',
+          automaticLayout: true,
+          scrollBeyondLastLine: false,
+          scrollbar: {
+            verticalScrollbarSize: 0
+          },
+        }"></monaco-editor>
+        <div class="editorControls" v-deep>
+            <ElButton type="primary" plain style="flex: 1;" @click="savefile(false)">返回</ElButton>
+        </div>
+    </ActivityBody> -->
     <ActivityBody v-else>
         正在等待指定文件名...
     </ActivityBody>
+    <style>
+    monaco-editor>>> {
+        flex: 1;
+    }
+    .editorControls>>> {
+        padding-top: 0.5em;
+        border-top: 1px solid gray;
+        margin-top: 1em;
+        display: flex;
+    }
+    </style>
 </ActivityView>
