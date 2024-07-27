@@ -2,7 +2,9 @@
 async function formatHex(blob) {
     // 读取Blob为ArrayBuffer  
     const arrayBuffer = await blob.arrayBuffer();
-
+    return formatHexFromUint8Array(arrayBuffer);
+}
+function formatHexFromUint8Array(arrayBuffer) {
     // 使用Uint8Array来访问ArrayBuffer中的每个字节  
     const uint8Array = new Uint8Array(arrayBuffer);
 
@@ -54,4 +56,4 @@ function hexStringToArrayBuffer(hexString) {
     return arrayBuffer;
 }  
 
-export { formatHex, hexStringToArrayBuffer };
+export { formatHex, formatHexFromUint8Array, hexStringToArrayBuffer };

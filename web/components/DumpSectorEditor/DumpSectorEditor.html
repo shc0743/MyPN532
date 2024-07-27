@@ -1,5 +1,5 @@
 <div v-deep v-bind="$attrs" class="host">
-    <div v-deep class="sectors-container">
+    <div v-deep class="sectors-container" ref="nativeQuery">
         <div v-for="(item, index) in sectors" v-deep class="sector-view">
             <div v-deep class="sector-header">扇区 {{index}}</div>
             <my-mf-sector-editor class="blocks-container sector-editor" v-deep :data="item" :uppercase="uppercase"></my-mf-sector-editor>
@@ -8,11 +8,14 @@
 
     <div v-deep class="examples mfsector-editor">
         <b style="color: #737373; margin-right: 0.5em;">图例:</b>
+        <span class="token token-normal">数据</span>
         <span class="token token-trailer">UID&厂商信息</span>
         <span class="token token-value-block">值块</span>
         <span class="token token-keya">密钥A</span>
         <span class="token token-keyb">密钥B</span>
         <span class="token token-acl">访问控制</span>
+        <span class="token token-reserved">保留</span>
+        <span class="token token-unknown">未知</span>
     </div>
 
     <div v-if="0">
@@ -58,6 +61,8 @@
 .examples>>> {
     display: flex;
     margin-top: 0.5em;
+    overflow: auto;
+    white-space: nowrap;
 }
 
 .examples>>> .token+.token {

@@ -23,6 +23,7 @@ const data = {
             editdata: null,
             editorType: 'hex',
             showUppercase: false,
+            allowParticipateBlocks: false,
 
         }
     },
@@ -141,7 +142,29 @@ const data = {
             }
 
             try {
-                const blob = new Blob([hexStringToArrayBuffer(this.$refs.editor.value)]);
+                // console.log('整合数据...');
+                const arr = []; let sectorN = -1;
+                for (const i of this.$refs.myEditor.getData()) {
+                    sectorN++;
+                    for (let j of i) {
+                        j = j.trim();
+                        if (j.length !== 32) {
+                            if (!this.allowParticipateBlocks) {
+                                throw await ElMessageBox.alert('在扇区 ' + sectorN +
+                                    ' 中检测到了不完整的块。\n如果要强制保存不完整的块，' +
+                                    '请在页面上方打开开关。注意：这将影响该块后的所有块，' +
+                                    '因为dump文件采用顺序读写！', '无法保存文件', {
+                                    type: 'error',
+                                    confirmButtonText: '返回修改',
+                                });
+                            }
+                        }
+                        arr.push(hexStringToArrayBuffer(j));
+                    }
+                }
+                // console.log('数据处理完成');
+
+                const blob = new Blob(arr);
                 const url = new URL('/api/v4.8/api/dumpfile', location.href);
                 url.searchParams.append('filename', this.file);
                 const v = await fetch(url, {

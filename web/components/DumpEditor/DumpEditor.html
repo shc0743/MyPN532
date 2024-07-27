@@ -1,8 +1,9 @@
 <ActivityView v-deep v-bind="$attrs">
     <ActivityTitle>编辑转储文件<span v-if="file" style="margin-left: 0.5em;">({{file}})</span></ActivityTitle>
-    <ActivityBody v-if="file" style="display: flex; flex-direction: column; overflow: hidden;">
+    <ActivityBody v-if="file" style="display: flex; flex-direction: column; overflow: hidden;" @keydown.ctrl.s.extra.prevent="savefile(true)">
         <!-- <monaco-editor v-deep ref="editor" :language="'mifare_hex'"></monaco-editor> -->
         <div style="text-align: right;">
+            <ElCheckbox v-model="allowParticipateBlocks">允许不完整的块</ElCheckbox>
             <ElCheckbox v-model="showUppercase">大写</ElCheckbox>
             <ElRadio v-model="editorType" value="hex">十六进制</ElRadio>
             <ElRadio v-model="editorType" value="asc">ASCII</ElRadio>
