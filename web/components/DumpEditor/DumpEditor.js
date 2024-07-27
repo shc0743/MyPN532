@@ -22,6 +22,7 @@ const data = {
             // },
             editdata: null,
             editorType: 'hex',
+            showUppercase: false,
 
         }
     },
@@ -89,6 +90,9 @@ const data = {
                 //         modified: this.compareData.modifiedModel,
                 //     });
                 // }
+
+                const showUppercase = await userconfig.get('editor.hex.uppercase') === 'true';
+                if (showUppercase) this.showUppercase = true;
 
                 // real load
                 const blob = await this.getFileBlob(this.file);
@@ -158,6 +162,9 @@ const data = {
         file() {
             if (!this.file) return;
             this.$nextTick(() => this.$nextTick(() => this.loadFile()));
+        },
+        showUppercase() {
+            userconfig.put('editor.hex.uppercase', this.showUppercase);  
         },
     },
 
