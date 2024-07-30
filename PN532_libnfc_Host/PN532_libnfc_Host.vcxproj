@@ -172,13 +172,21 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\resource\tool.cpp" />
+    <ClCompile Include="mfclassic-read.cpp" />
     <ClCompile Include="mfclassic.cpp" />
+    <ClCompile Include="mfoc-codes\crapto1.c" />
+    <ClCompile Include="mfoc-codes\crypto1.c" />
+    <ClCompile Include="mfoc-codes\slre.c" />
+    <ClCompile Include="mful.cpp" />
+    <ClCompile Include="mifare.c" />
     <ClCompile Include="nfc-anticol.cpp" />
     <ClCompile Include="PN532_libnfc_Host.cpp" />
     <ClCompile Include="scan-device.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\resource\tool.h" />
+    <ClInclude Include="mfoc-codes\crapto1.h" />
+    <ClInclude Include="mfoc-codes\slre.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

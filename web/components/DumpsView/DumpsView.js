@@ -12,6 +12,7 @@ const data = {
             dumpfile: [],
             dumpfileSelectAll: false,
             compare: Symbol(),
+            dumpfileShowAutodump: false,
 
         }
     },
@@ -27,7 +28,7 @@ const data = {
             this.dumpfile.length = 0;
             this.dumpfileSelectAll = false;
             this.dumpfiles.push('正在加载...');
-            fetch('/api/v4.8/api/dumpfile', { method: 'POST' }).then(v => v.text()).then(v => {
+            fetch('/api/v4.8/api/dumpfile' + (this.dumpfileShowAutodump ? '?autodump=true' : ''), { method: 'POST' }).then(v => v.text()).then(v => {
                 if (v == '') {
                     this.dumpfiles.length = 0;
                     this.dumpfile.length = 0;
@@ -48,6 +49,7 @@ const data = {
                 const url = new URL('/dumpfile-compare.html', location.href);
                 url.searchParams.set('a', this.dumpfile[0]);
                 url.searchParams.set('b', this.dumpfile[1]);
+                if (this.dumpfileShowAutodump) url.searchParams.set('autodump', 'true');
                 window.open(url, '_blank', 'width=1000,height=600');
                 return;
             }
@@ -56,14 +58,14 @@ const data = {
                 const pattern = /([\:\*\?"\<\>\|]|(^aux$|^con$|^com[0-9]$|^nul$))/ig // windows
                 if (pattern.test(filename)) return ElMessage.error('文件名非法')
                 // this.targetFile = filename;
-                location.hash = '#/dump/' + encodeURIComponent(filename);
+                location.hash = '#/dump/' + (this.dumpfileShowAutodump ? 'autodump/' : '') + encodeURIComponent(filename);
             } catch { return }
             else {
                 if (this.dumpfile.length !== 1) {
                     return ElMessage.error('能且只能选择1个转储文件进行编辑')
                 }
                 // this.targetFile = this.dumpfile[0];
-                location.hash = '#/dump/' + encodeURIComponent(this.dumpfile[0]);
+                location.hash = '#/dump/' + (this.dumpfileShowAutodump ? 'autodump/' : '') + encodeURIComponent(this.dumpfile[0]);
             }
 
         },
@@ -82,6 +84,7 @@ const data = {
                     for (const i of files) {
                         const url = new URL('/api/v4.8/api/dumpfile', location.href);
                         url.searchParams.append('filename', i);
+                        if (this.dumpfileShowAutodump) url.searchParams.append('autodump', 'true');
                         const resp = await fetch(url, { method: 'DELETE' });
                         if (!resp.ok) throw '删除文件' + i + '时遇到的HTTP错误：' + resp.status + resp.statusText;
                     }
@@ -122,6 +125,12 @@ const data = {
             }
         },
 
+    },
+
+    watch: {
+        dumpfileShowAutodump() {
+            this.userLoadData();
+        },
     },
 
     mounted() {

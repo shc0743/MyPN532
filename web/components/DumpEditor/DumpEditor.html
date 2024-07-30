@@ -2,16 +2,33 @@
     <ActivityTitle>编辑转储文件<span v-if="file" style="margin-left: 0.5em;">({{file}})</span></ActivityTitle>
     <ActivityBody v-if="file" style="display: flex; flex-direction: column; overflow: hidden;" @keydown.ctrl.s.extra.prevent="savefile(true)">
         <!-- <monaco-editor v-deep ref="editor" :language="'mifare_hex'"></monaco-editor> -->
-        <div style="text-align: right;">
-            <ElCheckbox v-model="allowParticipateBlocks">允许不完整的块</ElCheckbox>
-            <ElCheckbox v-model="showUppercase">大写</ElCheckbox>
-            <ElRadio v-model="editorType" value="hex">十六进制</ElRadio>
-            <ElRadio v-model="editorType" value="asc">ASCII</ElRadio>
-            <!-- <ElRadio v-model="editorType" value="utf">UTF-8</ElRadio> -->
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+            <div class="left" style="display: flex; align-items: center;">
+                <div v-if="!enableM1CFunc">部分功能未启用</div>
+            </div>
+
+            <div class="right" style="display: flex; align-items: center;">
+                <ElCheckbox v-if="enableM1CFunc && !isMonacoMode" v-model="allowParticipateBlocks">允许不完整的块</ElCheckbox>
+                <ElCheckbox v-if="!isMonacoMode" v-model="showUppercase">大写</ElCheckbox>
+                <ElCheckbox v-model="isMonacoMode" :disabled="isMonacoMode">使用 Monaco Editor (实验性)</ElCheckbox>
+                <ElRadio v-if="isMonacoMode" v-model="editorType" value="hex" :disabled="editorType === 'asc'">十六进制</ElRadio>
+                <ElRadio v-if="isMonacoMode" v-model="editorType" value="asc" :disabled="editorType === 'asc'">ASCII</ElRadio>
+                <!-- <ElRadio v-model="editorType" value="utf">UTF-8</ElRadio> -->
+                <ElPopover trigger="click" width="200">
+                    <template #reference>
+                        <ElButton style="margin-left: 0.5em;" size="small"><ElIcon><MoreFilled /></ElIcon></ElButton>
+                    </template>
+                    <div style="display: flex; flex-direction: column; white-space: nowrap;">
+                        <a href="#/" @click.prevent="launchTool('bcc')">BCC工具</a>
+                        <a href="#/" @click.prevent="launchTool('writethis')">将此转储写入其他标签</a>
+                    </div>
+                </ElPopover>
+            </div>
         </div>
-        <DumpSectorEditor :data="editdata" :type="editorType" :uppercase="showUppercase" ref="myEditor"></DumpSectorEditor>
+        <DumpSectorEditor v-if="!isMonacoMode" :data="editdata" :uppercase="showUppercase" :enableM1CFunc="enableM1CFunc" ref="myEditor"></DumpSectorEditor>
+        <monaco-editor v-else v-deep :data="editdata" ref="monaco"></monaco-editor>
         <div class="editorControls" v-deep>
-            <ElButton type="primary" plain style="flex: 1;" @click="savefile(true)">保存</ElButton>
+            <ElButton type="primary" plain style="flex: 1;" @click="savefile(true)" :disabled="editorType === 'asc'">保存</ElButton>
             <ElButton type="danger" plain style="flex: 1;" @click="savefile(false)">放弃</ElButton>
         </div>
     </ActivityBody>

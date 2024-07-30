@@ -17,11 +17,13 @@ class wsNativeNfcApiData {
 public:
 	wsNativeNfcApiData() :
 		hPipe_outbound_keyfile(0),
-		use_mfoc(false)
+		use_mfoc(false),
+		unlock(false)
 	{};
 	vector<wstring> keyfiles;
 	HANDLE hPipe_outbound_keyfile;
 	bool use_mfoc;
+	bool unlock;
 	wstring internalDataProvider;
 };
 
@@ -67,6 +69,7 @@ void WebSocketService::handleConnectionClosed(const WebSocketConnectionPtr& wsCo
 map<WS_SESSIONID, WebSocketConnectionPtr> wsSessionIdPtr;
 map<WS_SESSIONID, wsNativeNfcApiData> wsSessionIdData;
 DWORD WINAPI wsNativeReadNfcMfClassic(PVOID pConnInfo);
+bool wsSessionSessionEnd(WS_SESSIONID sessionId);
 
 
 
@@ -128,10 +131,13 @@ static void wsProcessMessage(const WebSocketConnectionPtr& wsConnPtr, std::strin
 			val["sessionId"] = sessionId;
 			wstring sz_keyfiles = ConvertUTF8ToUTF16(json["keyfiles"].asString());
 			bool use_mfoc = json["use_mfoc"].asBool();
+			bool unlock = json.isMember("unlock") ?
+				(json["unlock"].isBool() ? json["unlock"].asBool() : false) : false;
 			
-			if (sz_keyfiles.empty() && !use_mfoc) {
+			if (sz_keyfiles.empty() && !use_mfoc && !unlock) {
 				val["code"] = 400;
 				val["error"] = ccs8("需要指定keyfile");
+				wsSessionSessionEnd(sessionId);
 			}
 			else if (wsSessionIdData.contains(sessionId)) {
 				val["code"] = 400;
@@ -143,8 +149,9 @@ static void wsProcessMessage(const WebSocketConnectionPtr& wsConnPtr, std::strin
 			}
 			else {
 				wsNativeNfcApiData ad;
-				str_split(sz_keyfiles, L"|", ad.keyfiles);
+				if (!sz_keyfiles.empty()) str_split(sz_keyfiles, L"|", ad.keyfiles);
 				ad.use_mfoc = use_mfoc;
+				ad.unlock = unlock;
 				wsSessionIdData.insert(std::make_pair(sessionId, ad));
 
 				val["code"] = 0;
@@ -188,6 +195,17 @@ static void wsProcessMessage(const WebSocketConnectionPtr& wsConnPtr, std::strin
 #pragma region ws NFC apis
 
 extern string app_token;
+
+#define SERVER_EVENT_BEGIN(type) {  \
+Json::Value pipeEvent; \
+pipeEvent["type"] = type; {
+#define SERVER_EVENT_SET_PARAMETER(name, value) \
+pipeEvent[ #name ] = (value);
+#define SERVER_EVENT_END() }\
+wsSessionSessionSendEvent(sessionId, pipeEvent); }
+#define SERVER_SESSION_END() ;{wsSessionSessionEnd(sessionId);};
+#define SERVER_SESSION_END_WITH_CLEAN() ;{SERVER_SESSION_END();cleanPipe1();return 0;};
+
 
 
 bool wsSessionSessionEnd(WS_SESSIONID sessionId) {
@@ -254,6 +272,11 @@ wstring wsSessionFormatCurrentTime(
 	wstring date_format = L"",
 	wstring middle = L" ",
 	wstring time_format = L""
+);
+wstring wsSessionFormatCurrentTime(
+	wstring date_format,
+	wstring middle,
+	wstring time_format
 ) {
 	SYSTEMTIME st{};
 	WCHAR buffer[512]{};
@@ -437,11 +460,13 @@ DWORD __stdcall wsNativeReadNfcMfClassic(PVOID pConnInfo) {
 	}
 
 	auto& keyfiles = data->keyfiles;
-	if (keyfiles.empty() && !data->use_mfoc) {
+	if (keyfiles.empty() && !data->use_mfoc && !data->unlock) {
 		ptr->send(ccs8("{\"type\":\"error-ui\",\"error\":\"需要keyfile\",\"modal\":true}"));
 		wsSessionSessionEnd(sessionId);
 		return -1;
 	}
+
+	bool unlock = data->unlock;
 
 	// connect
 #if 1
@@ -456,8 +481,11 @@ DWORD __stdcall wsNativeReadNfcMfClassic(PVOID pConnInfo) {
 			1, 65536, 65536, 0, NULL);
 
 		if (hPipe == INVALID_HANDLE_VALUE) {
-			ptr->send(ccs8("{\"type\":\"error-ui\",\"error\":\"创建管道1失败\",\"modal\":true}"));
-			wsSessionSessionEnd(sessionId);
+			SERVER_EVENT_BEGIN("action-ended")
+				SERVER_EVENT_SET_PARAMETER(success, false)
+				SERVER_EVENT_SET_PARAMETER(errorText, L"创建管道1失败")
+			SERVER_EVENT_END()
+			SERVER_SESSION_END()
 			return 1;
 		}
 
@@ -564,35 +592,32 @@ DWORD __stdcall wsNativeReadNfcMfClassic(PVOID pConnInfo) {
 
 #endif
 
-	{
-		Json::Value pipeEvent;
-		pipeEvent["type"] = "pipe-created";
-		pipeEvent["pipe_type"] = "pipeKeyFile";
-		pipeEvent["pipe"] = ConvertUTF16ToUTF8(pipeKeyFile);
-		wsSessionSessionSendEvent(sessionId, pipeEvent);
-	}
+	SERVER_EVENT_BEGIN("pipe-created")
+		SERVER_EVENT_SET_PARAMETER(pipe_type, "pipeKeyFile")
+		SERVER_EVENT_SET_PARAMETER(pipe, ConvertUTF16ToUTF8(pipeKeyFile))
+	SERVER_EVENT_END()
 
 	string uid, atqa, sak; char cardSize = 1;
 	{
-		wstring std, text, pipe;
+		wstring std, text, pipe; string ansi;
 		DWORD dwCode = -1;
 		size_t pipeId = sessionId;
 		pipe = L"\\\\.\\pipe\\" + s2ws(app_token) +
 			L".cardquery-" + to_wstring(pipeId) + L".basicinfo";
 
 		HANDLE hThread = NULL;
-		if (pipeutil::CreateAndReadPipeAsync(pipe, &text, hThread)) {
+		if (pipeutil::CreateAndReadPipeAsync(pipe, &ansi, hThread)) {
 			GetProcessStdOutputWithExitCodeEnhanced(L"bin/self/service --type="
 				L"query-card-info --pipe=\"" + pipe + L"\"", &dwCode, std);
+			text = s2ws(ansi);
 		}
 		else {
-			Json::Value pipeEvent;
-			pipeEvent["type"] = "action-ended";
-			pipeEvent["success"] = false;
-			pipeEvent["code"] = (ULONGLONG)GetLastError();
-			pipeEvent["errorText"] = ConvertUTF16ToUTF8(LastErrorStrW());
-			wsSessionSessionSendEvent(sessionId, pipeEvent);
-			wsSessionSessionEnd(sessionId);
+			SERVER_EVENT_BEGIN("action-ended")
+				SERVER_EVENT_SET_PARAMETER(success, false)
+				SERVER_EVENT_SET_PARAMETER(errorText, ConvertUTF16ToUTF8(LastErrorStrW()))
+				SERVER_EVENT_SET_PARAMETER(code, (ULONGLONG)GetLastError())
+			SERVER_EVENT_END()
+			SERVER_SESSION_END_WITH_CLEAN()
 		}
 
 		if (hThread) {
@@ -605,6 +630,7 @@ DWORD __stdcall wsNativeReadNfcMfClassic(PVOID pConnInfo) {
 			Json::Reader reader;
 			bool parsingSuccessful = reader.parse(ws2s(text), root);
 			if (!parsingSuccessful) {
+				if (dwCode) throw ConvertUTF16ToUTF8(std);
 				throw - 1;
 			}
 			uid = (root["uid"].asString());
@@ -616,33 +642,142 @@ DWORD __stdcall wsNativeReadNfcMfClassic(PVOID pConnInfo) {
 			if (sak == "18") cardSize = 4;
 		}
 		catch (std::string str) {
-			Json::Value pipeEvent;
-			pipeEvent["type"] = "action-ended";
-			pipeEvent["success"] = false;
-			pipeEvent["code"] = -1;
-			pipeEvent["errorText"] = str;
-			wsSessionSessionSendEvent(sessionId, pipeEvent);
-			wsSessionSessionEnd(sessionId);
+			SERVER_EVENT_BEGIN("action-ended")
+				SERVER_EVENT_SET_PARAMETER(success, false)
+				SERVER_EVENT_SET_PARAMETER(code, -1)
+				SERVER_EVENT_SET_PARAMETER(errorText, str)
+			SERVER_EVENT_END()
+			SERVER_SESSION_END_WITH_CLEAN()
 		}
 		catch (...) {
-			Json::Value pipeEvent;
-			pipeEvent["type"] = "action-ended";
-			pipeEvent["success"] = false;
-			pipeEvent["code"] = -1;
-			pipeEvent["errorText"] = ccs8("卡数据解析失败，读卡器上可能无卡");
-			wsSessionSessionSendEvent(sessionId, pipeEvent);
-			wsSessionSessionEnd(sessionId);
+			SERVER_EVENT_BEGIN("action-ended")
+				SERVER_EVENT_SET_PARAMETER(success, false)
+				SERVER_EVENT_SET_PARAMETER(code, -1)
+				SERVER_EVENT_SET_PARAMETER(errorText, ConvertUTF16ToUTF8(L"错误 " + to_wstring(dwCode)
+					+ L": " + ErrorCodeToStringW(dwCode) + L"\n" + text + L"\n\nstd.output=\n" + std));
+			SERVER_EVENT_END()
+			SERVER_SESSION_END_WITH_CLEAN()
 		}
 
-		Json::Value pipeEvent;
-		pipeEvent["type"] = "tag-info-loaded";
-		pipeEvent["data"] = ConvertUTF16ToUTF8(text);
-		wsSessionSessionSendEvent(sessionId, pipeEvent);
+		SERVER_EVENT_BEGIN("tag-info-loaded");
+		SERVER_EVENT_SET_PARAMETER(data, ConvertUTF16ToUTF8(text));
+		SERVER_EVENT_END();
 
 	}
 
+	SERVER_EVENT_BEGIN("tag-read-started");
+	SERVER_EVENT_END();
 
-	Sleep(30000);
+	if (!data->use_mfoc) {
+		wstring std, text, pipe; string ansi;
+		DWORD dwCode = -1;
+		size_t pipeId = sessionId;
+		pipe = L"\\\\.\\pipe\\" + s2ws(app_token) +
+			L".ws.mfread-" + to_wstring(pipeId) + L".req";
+
+		HANDLE hThread = NULL;
+		auto rlcb = [](string& ansi, PVOID pvoid) { // Run Log CallBack
+			WS_SESSIONID sessionId = (WS_SESSIONID)pvoid;
+			wstring data = s2ws(ansi);
+
+			SERVER_EVENT_BEGIN("run-log");
+			SERVER_EVENT_SET_PARAMETER(data, ConvertUTF16ToUTF8(data));
+			SERVER_EVENT_END();
+		};
+		auto rlcbw = [](wstring& data, PVOID pvoid) { // Run Log CallBack
+			WS_SESSIONID sessionId = (WS_SESSIONID)pvoid;
+
+			SERVER_EVENT_BEGIN("run-log");
+			SERVER_EVENT_SET_PARAMETER(data, ConvertUTF16ToUTF8(data));
+			SERVER_EVENT_END();
+		};
+		if (pipeutil::CreateAndReadPipeAsync(pipe, &ansi, hThread, rlcb, (PVOID)sessionId)) {
+			wstring cmd = L"bin/self/service --type=mfclassic";
+			if (unlock) {
+				cmd += L" -cR --pipe=" + pipe;
+			}
+			else {
+				cmd += L"-read -O\"" + pipe + L"\" -f\"" + pipeKeyFile + L"\" ";
+			}
+			GetProcessStdOutputWithExitCodeEnhanced(cmd,
+				&dwCode, std, true, rlcbw, (PVOID)sessionId);
+			text = s2ws(ansi);
+		}
+		else {
+			text = L"failed, errno= " + to_wstring(GetLastError());
+		}
+
+		if (hThread) {
+			WaitForSingleObject(hThread, 60000);
+			CloseHandle(hThread);
+		}
+
+		if (dwCode) {//failed
+			SERVER_EVENT_BEGIN("action-ended");
+			SERVER_EVENT_SET_PARAMETER(success, false);
+			SERVER_EVENT_SET_PARAMETER(code, (uint64_t)dwCode);
+			SERVER_EVENT_SET_PARAMETER(errorText, ccs8("读取卡片时出现错误。\n异常来自 service.exe (" + to_wstring(dwCode) + 
+				L": " + ErrorCodeToStringW(dwCode) + L")\n" + text + L"\n\nstd.output=\n" + std));
+			SERVER_EVENT_END();
+			SERVER_SESSION_END_WITH_CLEAN();
+		}
+
+		wstring filename = s2ws(uid) + L"-" + wsSessionFormatCurrentTime(L"yyyyMMdd", L"-", L"HHmmss") + L"-" + to_wstring(sessionId) + L".autodump";
+		{
+			// 保存文件
+			HANDLE hFile = CreateFileW((L"autodump/" + filename).c_str(), GENERIC_ALL, 0, 0, CREATE_ALWAYS, 0, 0);
+			if (!hFile || hFile == INVALID_HANDLE_VALUE) {
+				SERVER_EVENT_BEGIN("action-ended");
+				SERVER_EVENT_SET_PARAMETER(success, false);
+				SERVER_EVENT_SET_PARAMETER(code, (uint64_t)GetLastError());
+				SERVER_EVENT_SET_PARAMETER(errorText, ConvertUTF16ToUTF8(LastErrorStrW()));
+				SERVER_EVENT_END();
+				SERVER_SESSION_END_WITH_CLEAN();
+			}
+			DWORD written = 0;
+			WriteFile(hFile, ansi.data(), (DWORD)ansi.size(), &written, 0);
+			CloseHandle(hFile);
+		}
+
+		SERVER_EVENT_BEGIN("action-ended");
+		SERVER_EVENT_SET_PARAMETER(success, true);
+		SERVER_EVENT_SET_PARAMETER(file, ConvertUTF16ToUTF8(filename));
+		SERVER_EVENT_SET_PARAMETER(file_type, "autodump");
+		SERVER_EVENT_END();
+	}
+	else {
+		wstring filename = s2ws(uid) + L"-" + wsSessionFormatCurrentTime(L"yyyyMMdd", L"-", L"HHmmss") + L"-" + to_wstring(sessionId) + L".autodump";
+
+		wstring std;
+		DWORD dwCode = -1;
+
+		auto rlcb = [](wstring& data, PVOID pvoid) { // Run Log CallBack
+			WS_SESSIONID sessionId = (WS_SESSIONID)pvoid;
+
+			SERVER_EVENT_BEGIN("run-log");
+			SERVER_EVENT_SET_PARAMETER(data, ConvertUTF16ToUTF8(data));
+			SERVER_EVENT_END();
+		};
+		GetProcessStdOutputWithExitCodeEnhanced(L"bin/mfoc/mfoc64 -f " + pipeKeyFile +
+			L" -O autodump/" + filename, &dwCode, std, true, rlcb, (PVOID)sessionId);
+
+		if (dwCode) {//failed
+			SERVER_EVENT_BEGIN("action-ended");
+			SERVER_EVENT_SET_PARAMETER(success, false);
+			SERVER_EVENT_SET_PARAMETER(code, (uint64_t)dwCode);
+			SERVER_EVENT_SET_PARAMETER(errorText, ccs8("读取卡片时出现错误。\n异常来自 mfoc64.exe ("
+				+ to_wstring(dwCode) + L": " + ErrorCodeToStringW(dwCode) + L")\n" + std));
+			SERVER_EVENT_END();
+			SERVER_SESSION_END_WITH_CLEAN();
+		}
+
+		SERVER_EVENT_BEGIN("action-ended");
+		SERVER_EVENT_SET_PARAMETER(success, true);
+		SERVER_EVENT_SET_PARAMETER(file, ConvertUTF16ToUTF8(filename));
+		SERVER_EVENT_SET_PARAMETER(file_type, "autodump");
+		SERVER_EVENT_END();
+	}
+
 	wsSessionSessionEnd(sessionId);
 	cleanPipe1();
 	return 0;
@@ -867,7 +1002,7 @@ void readmfoc() {
 		DWORD dwCode = -1;
 
 		wstring dump_name = L"dumps/" + card_uid + L",time=" +
-			wsSessionFormatCurrentTime(L"yyyy_MM_dd", L"-", L"hh_mm_ss");
+			wsSessionFormatCurrentTime(L"yyyyMMdd", L"-", L"HHmmss");
 
 		wstring cmd_line = L"bin/mfoc/mfoc64 -O \"" +
 			dump_name + L"\" ";

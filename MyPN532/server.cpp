@@ -150,7 +150,7 @@ void server::MainServer::webconfig(const HttpRequestPtr& req, std::function<void
 		Json::Reader reader;
 		bool parsingSuccessful = reader.parse(buffer.str(), root);
 		if (!parsingSuccessful) {
-			resp->setStatusCode(k500InternalServerError);
+			resp->setStatusCode(k400BadRequest);
 			return callback(resp);
 		}
 		std::string data;
@@ -342,7 +342,33 @@ void server::MainServer::keyfile(const HttpRequestPtr& req, std::function<void(c
 }
 void server::MainServer::dumpfile(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
 {
-	listfile((req), std::move(callback), "dumps");
+	listfile((req), std::move(callback), req->getParameter("autodump") == "true" ? "autodump" : "dumps");
+}
+
+void server::MainServer::deleteautodump(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	if (req->method() == Options) return callback(resp);
+
+	string_view body_view = req->getBody();
+	string body = req->getParameter("filename");
+	if (body_view.empty() && body.empty()) {
+		resp->setStatusCode(k400BadRequest);
+		resp->setContentTypeCode(CT_TEXT_PLAIN);
+		return callback(resp);
+	}
+	if (body.empty()) body = body_view.data();
+	if (body.find("/") != body.npos || body.find("\\") != body.npos) {
+		HttpResponsePtr resp = HttpResponse::newHttpResponse();
+		CORSadd(req, resp);
+		resp->setContentTypeCode(CT_TEXT_PLAIN);
+		resp->setStatusCode(k403Forbidden);
+		return callback(resp);
+	}
+
+	resp->setStatusCode(DeleteFileW((L"autodump/" + ConvertUTF8ToUTF16(body)).c_str()) ? k204NoContent : k500InternalServerError);
+	return callback(resp);
 }
 
 void server::MainServer::launchcmd(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
@@ -407,16 +433,17 @@ void server::MainServer::taginfo(const HttpRequestPtr& req, std::function<void(c
 
 void server::MainServer::scandevice(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
 {
-	wstring std, text, pipe;
+	wstring std, text, pipe; string ansi;
 	DWORD dwCode = -1;
 	size_t pipeId = ++nfcClientApiPipeId;
 	pipe = L"\\\\.\\pipe\\" + s2ws(app_token) +
 		L".http.devicescan-" + to_wstring(pipeId) + L".req";
 
 	HANDLE hThread = NULL;
-	if (pipeutil::CreateAndReadPipeAsync(pipe, &text, hThread)) {
+	if (pipeutil::CreateAndReadPipeAsync(pipe, &ansi, hThread)) {
 		GetProcessStdOutputWithExitCodeEnhanced(L"bin/self/service --type="
 			L"scan-device --pipe=\"" + pipe + L"\"", &dwCode, std);
+		text = s2ws(ansi);
 	}
 	else {
 		text = L"failed, errno= " + to_wstring(GetLastError());
@@ -565,6 +592,135 @@ void server::MainServer::testdevice(const HttpRequestPtr& req, std::function<voi
 		CloseHandle(hCom);
 	}
 	callback(resp);
+}
+
+
+wstring wsSessionFormatCurrentTime(
+	wstring date_format = L"",
+	wstring middle = L" ",
+	wstring time_format = L""
+);
+
+void server::MainServer::readultralight(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	string uid, atqa, sak; char cardSize = 1;
+	size_t pipeId = ++nfcClientApiPipeId;
+	{
+		wstring std, text, pipe; string ansi;
+		DWORD dwCode = -1;
+		pipe = L"\\\\.\\pipe\\" + s2ws(app_token) +
+			L".web.cardquery-" + to_wstring(pipeId) + L".basicinfo";
+
+		HANDLE hThread = NULL;
+		if (pipeutil::CreateAndReadPipeAsync(pipe, &ansi, hThread)) {
+			GetProcessStdOutputWithExitCodeEnhanced(L"bin/self/service --type="
+				L"query-card-info --pipe=\"" + pipe + L"\"", &dwCode, std);
+			text = s2ws(ansi);
+		}
+		else {
+			HttpResponsePtr resp = HttpResponse::newHttpResponse();
+			CORSadd(req, resp);
+			resp->setContentTypeCode(CT_TEXT_PLAIN);
+			resp->setStatusCode(k500InternalServerError);
+			resp->setBody(ConvertUTF16ToUTF8(text));
+			return callback(resp);
+		}
+
+		if (hThread) {
+			WaitForSingleObject(hThread, 60000);
+			CloseHandle(hThread);
+		}
+
+		try {
+			Json::Value root;
+			Json::Reader reader;
+			bool parsingSuccessful = reader.parse(ws2s(text), root);
+			if (!parsingSuccessful) {
+				if (dwCode) throw ConvertUTF16ToUTF8(std);
+				throw - 1;
+			}
+			uid = (root["uid"].asString());
+			sak = (root["sak"].asString());
+			atqa = (root["atqa"].asString());
+			if (uid.empty() || sak.empty() || atqa.empty()) throw - 2;
+		}
+		catch (...) {
+			HttpResponsePtr resp = HttpResponse::newHttpResponse();
+			CORSadd(req, resp);
+			resp->setContentTypeCode(CT_TEXT_PLAIN);
+			resp->setStatusCode(k500InternalServerError);
+			resp->setBody(ConvertUTF16ToUTF8(L"¿¨Æ¬ÐÅÏ¢²éÑ¯Ê§°Ü"));
+			return callback(resp);
+		}
+	}
+
+	wstring filename = s2ws(uid) + L"-" + wsSessionFormatCurrentTime(L"yyyyMMdd", L"-", L"HHmmss") +
+		L"-" + to_wstring(pipeId) + L".client.ultralight.autodump";
+
+	auto body_view = req->body();
+	auto body = body_view.data();
+
+	wstring cmd = L"bin/nfc/nfc-mfultralight r autodump/" + filename;
+	if (!body_view.empty() && body_view.size() < 64) {
+		cmd += L" --pw \"" + ConvertUTF8ToUTF16(body) + L"\"";
+	}
+
+	wstring text;
+	DWORD dwCode = -1;
+	GetProcessStdOutputWithExitCodeEnhanced(cmd, &dwCode, text);
+
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	resp->setStatusCode((dwCode == 0) ? k200OK : k500InternalServerError);
+	resp->setBody((dwCode == 0) ? ConvertUTF16ToUTF8(filename) : ConvertUTF16ToUTF8(text));
+	return callback(resp);
+}
+
+void server::MainServer::writeultralight(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	size_t pipeId = ++nfcClientApiPipeId;
+	auto body_view = req->body();
+	auto body = body_view.data();
+
+	Json::Value root;
+	Json::Reader reader;
+	bool parsingSuccessful = reader.parse(body, root);
+	if (!parsingSuccessful) {
+		resp->setStatusCode(k400BadRequest);
+		return callback(resp);
+	}
+	if (!root.isMember("file") || !root["file"].isString()) {
+		resp->setStatusCode(k400BadRequest);
+		return callback(resp);
+	}
+	wstring filename = ConvertUTF8ToUTF16(root["file"].asString());
+
+	wstring cmd = L"bin/self/service w dumps/" + filename;
+	if (root.isMember("pw") && root["pw"].isString() && root["pw"].asString().length() < 64) {
+		cmd += L" --pw \"" + ConvertUTF8ToUTF16(root["pw"].asString()) + L"\"";
+	}
+	cmd += L" --type=mful ";
+	if (root.isMember("option") && root["option"].isString()) {
+		string opt = root["option"].asString();
+		if (opt.length() == 4) {
+			if (opt[0] == L'1') cmd += L"--otp ";
+			if (opt[1] == L'1') cmd += L"--lock ";
+			if (opt[2] == L'1') cmd += L"--dynlock ";
+			if (opt[3] == L'1') cmd += L"--uid ";
+		}
+	}
+
+	wstring text;
+	DWORD dwCode = -1;
+	GetProcessStdOutputWithExitCodeEnhanced(cmd, &dwCode, text);
+
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	resp->setStatusCode((dwCode == 0) ? k200OK : k500InternalServerError);
+	resp->setBody(ConvertUTF16ToUTF8(text));
+	return callback(resp);
 }
 
 

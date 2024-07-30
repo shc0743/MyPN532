@@ -2,7 +2,7 @@
     <div v-deep class="sectors-container" ref="nativeQuery">
         <div v-for="(item, index) in sectors" v-deep class="sector-view">
             <div v-deep class="sector-header">扇区 {{index}}</div>
-            <my-mf-sector-editor class="blocks-container sector-editor" v-deep :data="item" :uppercase="uppercase"></my-mf-sector-editor>
+            <my-mf-sector-editor class="blocks-container sector-editor" v-deep :is_manufacture="enableM1CFunc && index === 0" :auto_value_block_check="enableM1CFunc" :data="item" :uppercase="uppercase"></my-mf-sector-editor>
         </div>
     </div>
 
@@ -57,6 +57,7 @@
 }
 .sector-header>>> {
     font-family: Consolas, monospace;
+    color: #1100aa;
 }
 .examples>>> {
     display: flex;

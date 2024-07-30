@@ -1,6 +1,35 @@
 <ActivityView v-deep>
     <ActivityTitle>写入 Mifare Ultralight / NTag21x</ActivityTitle>
     <ActivityBody>
-
+        <div style="margin-right: 0.5em; margin-bottom: 0.5em; padding-bottom: 0.5em; border-bottom: 1px solid;"><b style="color: darkgoldenrod; margin-right: 0.5em;">提示:</b>建议使用<a href="#/ndef/">NDEF编辑器</a>对NTag进行编辑，而不是使用本工具对原始数据进行操作</div>
+        <div v-if="!hasStarted" style="display: flex; flex-direction: column;">
+            <div v-deep class="input-area" style="margin-bottom: 0.5em;">
+                <span>转储文件:</span>
+                <ElSelect v-model="writeDump.file" style="margin: 0 0.5em; flex: 1;">
+                    <ElOption v-for="item in (writeDump.files)" :value="item">{{item}}</ElOption>
+                </ElSelect>
+                <ElButton @click="loadDumpfileList">重新加载文件列表</ElButton>
+            </div>
+            <div style="display: flex; white-space: nowrap; align-items: center; margin-bottom: 0.5em;"><span style="margin-right: 0.5em;">密码(如果有): </span><ElInput v-model="pw" /></div>
+            <div v-deep class="input-area"><ElCheckbox v-model="option[0]">写 OTP/Capability Bytes</ElCheckbox></div>
+            <div v-deep class="input-area"><ElCheckbox v-model="option[1]">写 Lock Bytes (Warning: OTP if set)</ElCheckbox></div>
+            <div v-deep class="input-area"><ElCheckbox v-model="option[2]">写 Dynamic Lock Bytes</ElCheckbox></div>
+            <div v-deep class="input-area"><ElCheckbox v-model="option[3]">写 UID bytes (only for special writeable UID cards)</ElCheckbox></div>
+            <a style="margin-top: 1em; font-size: x-large;" href="#" @click.prevent="writeit">点击写入</a>
+        </div>
+        <div v-if="hasStarted && !hasFinished">正在写入，请稍候...</div>
+        <div v-if="hasFinished && !hasError">
+            <h1>写入完成!</h1>
+            <pre>{{text}}</pre>
+        </div>
+        <div v-if="hasError">
+            <h1>写入错误!</h1>
+            <pre>{{errorText}}</pre>
+        </div>
+        <style>.input-area>>> {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }</style>
     </ActivityBody>
 </ActivityView>

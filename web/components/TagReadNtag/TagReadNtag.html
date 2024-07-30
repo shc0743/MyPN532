@@ -1,6 +1,18 @@
 <ActivityView v-deep>
     <ActivityTitle>读取 Mifare Ultralight / NTag21x</ActivityTitle>
     <ActivityBody>
-
+        <div style="margin-right: 0.5em; margin-bottom: 0.5em; padding-bottom: 0.5em; border-bottom: 1px solid;"><b style="color: darkgoldenrod;">提示:</b>建议使用<a href="#/ndef/">NDEF编辑器</a>对NTag进行编辑，而不是使用本工具对原始数据进行操作</div>
+        <div v-if="!hasStarted" style="display: flex; flex-direction: column;">
+            <div style="display: flex; white-space: nowrap; align-items: center;"><span style="margin-right: 0.5em;">密码(如果有): </span><ElInput v-model="pw" /></div>
+            <a style="margin-top: 1em; font-size: x-large;" href="#" @click.prevent="readit">点击读取</a>
+        </div>
+        <div v-if="hasStarted && !hasFinished">正在读取，请稍候...</div>
+        <div v-if="hasFinished && !hasError">
+            读取完成！<a :href="dumpfile">点击查看</a>
+        </div>
+        <div v-if="hasError">
+            <h1>读取错误!</h1>
+            <pre>{{errorText}}</pre>
+        </div>
     </ActivityBody>
 </ActivityView>

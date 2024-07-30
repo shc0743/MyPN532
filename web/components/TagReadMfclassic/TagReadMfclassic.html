@@ -1,7 +1,7 @@
 <ActivityView v-deep>
     <ActivityTitle v-deep :inert="(page > 0 && page < 100)">读标签</ActivityTitle>
     <style>[inert]>>>{opacity: 0.5;}</style>
-    <ActivityBody style="display: flex; flex-direction: column; overflow: hidden;">
+    <ActivityBody style="display: flex; flex-direction: column;">
         <template v-if="page === 0">
             <div style="display: flex; align-items: center;" v-show="!use_mfoc">
                 <label>扇区范围</label>
@@ -15,18 +15,22 @@
                     <span style="margin-left: 0.5em;">全部</span>
                 </label>
             </div>
-            <div style="margin-bottom: 0.5em; display: flex; align-items: center;">
-                <label style="cursor: pointer;"><ElCheckbox v-model="use_mfoc" />&nbsp;使用mfoc</label>
+            <div style="margin-bottom: 0.5em; display: flex; flex-direction: column; justify-content: center;">
+                <label style="cursor: pointer;"><ElCheckbox v-model="use_mfoc" />&nbsp;使用mfoc (推荐)</label>
+                <a href="#/tag/mfmagic1/unlock/read" @click.prevent="rununlockuid">使用解锁模式读取UID卡...</a>
             </div>
-            <KeyReflect :hide-title="true" :required="!use_mfoc" @selected="startRead"></KeyReflect>
+            <KeyReflect v-if="!unlockuid" :hide-title="true" :required="!(use_mfoc ||  unlockuid)" @selected="startRead" v-deep></KeyReflect>
+            <style>[v-deep] > .keyReflect{overflow: visible;}</style>
         </template>
         <template v-if="page === 1">
             <div>已选择 {{userkeyfile.length}} 个密钥文件</div>
             <div><b>已发送请求，正在等待服务器响应...</b></div>
         </template>
-        <template v-if="page === 3">
+        <template v-if="page === 3 || page === 9999">
             <div style="display: flex; align-items: center; justify-content: center; border-bottom: 1px solid; padding-bottom: 0.5em; margin-bottom: 1em;">
-                <span>已选择 {{userkeyfile.length}} 个密钥文件</span>
+                <span v-if="page === 3">已选择 {{userkeyfile.length}} 个密钥文件</span>
+                <div style="font-size: x-large; color: green;" v-if="page === 9999">标签读取成功!</div>
+                <ElButton type="success" plain @click="gotoDumpFile" v-if="page === 9999" style="margin-left: 0.5em;">前往查看</ElButton>
                 <ElButton text size="small" @click="show_advanced = false" v-if="show_advanced" style="margin-left: 0.5em;">显示更少...</ElButton>
             </div>
             <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" v-show="show_advanced">
@@ -37,15 +41,20 @@
             </div>
             <div style="flex: 1; display: grid; place-items: center;" v-if="!show_advanced">
                 <div style="text-align: center;">
-                    <div style="margin-bottom: 1em;">正在读取标签...</div>
+                    <div style="margin-bottom: 1em;" v-if="page === 3">正在读取标签...</div>
+                    <div style="margin-bottom: 0.5em; font-size: x-large; color: green;" v-if="page === 9999">标签读取成功!</div>
+                    <div style="margin-bottom: 1em; user-select: none; font-family: Consolas;" v-if="page === 9999">文件名: <span style="user-select: all;" v-text="dumpFile"></span></div>
                     <ElProgress type="circle" :percentage="read_percent" :status="read_percent >= 100 ? 'success' : undefined" />
+                    <div style="margin-top: 1em;"><ElButton type="success" plain @click="gotoDumpFile" v-if="page === 9999">前往查看</ElButton></div>
                     <div style="margin-top: 1em;"><ElButton text size="small" @click="show_advanced = true">显示更多...</ElButton></div>
                 </div>
             </div>
         </template>
         <template v-if="page >= 10001 && page < 11000">
             <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                <div style="color: red; font-size: x-large; text-align: center; margin-bottom: 1em; padding-bottom: 0.5em; border-bottom: 1px solid;">出现错误！(错误代码：{{page}}) <ElButton text @click="retryAction">重试</ElButton></div>
+                <div style="color: red; font-size: x-large; text-align: center; margin-bottom: 0.5em; padding-bottom: 0.5em; border-bottom: 1px solid;">出现错误！(错误代码：{{page}}) <ElButton text @click="retryAction">重试</ElButton></div>
+                <div v-text="error分析" style="white-space: pre; font-weight: bold;"></div>
+                <div style="margin-top: 1em; padding-top: 0.5em; border-top: 1px solid;">问题详细信息:</div>
                 <div v-text="errorText" style="flex: 1; overflow: auto; white-space: pre;"></div>
             </div>
         </template>

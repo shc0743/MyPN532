@@ -14,8 +14,10 @@ const data = {
 
     props: {
         data: Blob,
-        type: String,
+        // type: String,
         uppercase: Boolean,
+        // isMonacoMode: Boolean,
+        enableM1CFunc: Boolean,
     },
 
     components: {
@@ -29,12 +31,17 @@ const data = {
             this.sectors.length = 0;
             let hexString = '', buffer = [];
             for (let i = 0, l = uint8Array.length; i < l; i++) {
-                if (this.type === 'hex')
+                // if (this.isMonacoMode) {
+                //     if (this.type === 'hex')
+                //         hexString += uint8Array[i].toString(16).padStart(2, '0');
+                //     if (this.type === 'asc')
+                //         hexString += String.fromCharCode(uint8Array[i]);
+                //     if (this.type === 'utf')
+                //         hexString += String.fromCodePoint(uint8Array[i]);
+                // } else
+                {
                     hexString += uint8Array[i].toString(16).padStart(2, '0');
-                if (this.type === 'asc')
-                    hexString += String.fromCharCode(uint8Array[i]);
-                if (this.type === 'utf')
-                    hexString += String.fromCodePoint(uint8Array[i]);
+                }
                 if ((i + 1) % 16 === 0 || (i + 1 === l)) {
                     buffer.push(hexString);
                     hexString = '';
@@ -92,7 +99,7 @@ MySectorEditorStyle.replaceSync(`
     --token-color: #777777;
 }
 .mfsector-editor .token.token-value-block {
-    --token-color: #caca14;
+    --token-color: #99991e;
 }
 .mfsector-editor .token.token-keya {
     --token-color: #02cd00;
@@ -148,6 +155,21 @@ class MySectorEditor extends HTMLElement {
         return true;
     }
 
+    get is_manufacture() {
+        return 'true' === this.getAttribute('is_manufacture');
+    }
+    set is_manufacture(value) {
+        this.setAttribute('is_manufacture', String(value));
+        return true;
+    }
+    get auto_value_block_check() {
+        return 'true' === this.getAttribute('auto_value_block_check');
+    }
+    set auto_value_block_check(value) {
+        this.setAttribute('auto_value_block_check', String(value));
+        return true;
+    }
+
     #update() {
         this.#el.innerHTML = this.#errorMessage.innerHTML = '';
         let dataIndex = -1;
@@ -160,11 +182,19 @@ class MySectorEditor extends HTMLElement {
             blockView.className = 'block-view';
             this.#el.append(blockView);
 
-            if (dataIndex === 0) {
+            if (dataIndex === 0 && this.is_manufacture) {
                 const token = document.createElement('span');
                 token.className = 'token token-trailer';
                 token.innerText = data;
                 blockView.append(token);
+                
+                const uidBits = [];
+                for (let i = 0; i < 4; ++i) uidBits.push(Number.parseInt(data.substring(i * 2, (i + 1) * 2), 16));
+                const bcc = Number.parseInt(data.substring(8, 10), 16);
+                const correctBCC = uidBits[0] ^ uidBits[1] ^ uidBits[2] ^ uidBits[3];
+                if (bcc !== correctBCC) {
+                    this.#errorMessage.innerHTML = `BCC校验失败! 正确的BCC应为 ${correctBCC.toString(16).padStart(2, '0')}`;
+                }
             }
             else if (dataIndex + 1 === this.#data.length) {
                 const tokenType = ['keya', 'acl', 'reserved', 'keyb', 'unknown'];
@@ -182,8 +212,33 @@ class MySectorEditor extends HTMLElement {
             }
             else {
                 const token = document.createElement('span');
-                token.className = 'token token-normal';
+                token.className = 'token';
                 token.innerText = data;
+                if (this.auto_value_block_check) {
+                    try {
+                        if (data.length !== 32) throw 1;
+                        const values = [
+                            Number.parseInt(data.substring(0, 8), 16), // value1
+                            Number.parseInt(data.substring(8, 16), 16), // value2
+                            Number.parseInt(data.substring(16, 24), 16), // value3
+                            Number.parseInt(data.substring(24, 26), 16), // address1
+                            Number.parseInt(data.substring(26, 28), 16), // 2
+                            Number.parseInt(data.substring(28, 30), 16), // 3
+                            Number.parseInt(data.substring(30, 32), 16), // 4
+                        ];
+
+                        for (const i of values) if (isNaN(i)) throw 2;
+
+                        if (!(values[0] === values[2] && values[2] === (0xffffffff - values[1]))) throw 3;
+                        if (!(values[3] === values[5] && values[3] === (0xff - values[4]) && values[3] === (0xff - values[6]))) throw 3;
+
+                        token.classList.add('token-value-block');
+                    } catch {
+                        token.classList.add('token-normal');
+                    }
+                } else {
+                    token.classList.add('token-normal');
+                }
                 blockView.append(token);
             }
         }

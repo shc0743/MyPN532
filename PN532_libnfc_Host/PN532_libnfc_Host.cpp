@@ -36,6 +36,7 @@ HANDLE hPipe;
 #endif
 DWORD Echo(PVOID buffer, DWORD count);
 DWORD Echo(std::wstring str);
+DWORD Echo(std::string str);
 DWORD Echo(PVOID buffer, DWORD count) {
 	HANDLE hFile = hPipe;
 	if (!hFile) {
@@ -46,23 +47,23 @@ DWORD Echo(PVOID buffer, DWORD count) {
 	WriteFile(hFile, buffer, count, &written, NULL);
 	return written;
 }
-DWORD Echo(wstring str) {
-	HANDLE hFile = hPipe;
-	if (!hFile) {
-		string ansi = ws2s(str);
-		return Echo(ansi.data(), (DWORD)ansi.size());
-	}
+DWORD Echo(string str) {
 	DWORD write, written = 0;
 	write = DWORD(
 		(SIZE_T(str.length()) + 1) *
 		sizeof(decltype(str)::allocator_type::value_type));
 	return Echo(str.data(), write);
 }
+DWORD Echo(std::wstring str) {
+	return Echo(ws2s(str));
+}
 
 
 int nfc_scan_device();
 int nfc_query_card_info();
+int nfc_mful(CmdLineW&);
 int nfc_mfclassic(CmdLineW&);
+int nfc_mfclassic_read(CmdLineW&);
 
 
 
@@ -100,6 +101,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	if (type == L"mfclassic") {
 		return nfc_mfclassic(cl);
+	}
+	if (type == L"mfclassic-read") {
+		return nfc_mfclassic_read(cl);
+	}
+	if (type == L"mful") {
+		return nfc_mful(cl);
 	}
 
 	if (type == L"test-app") {

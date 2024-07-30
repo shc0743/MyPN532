@@ -43,6 +43,10 @@
 #ifndef _LIBNFC_MIFARE_H_
 #  define _LIBNFC_MIFARE_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #  include <nfc/nfc-types.h>
 
 // Compiler directive, set struct alignment to 1 uint8_t for compatibility
@@ -287,4 +291,7 @@ typedef union {
 // Reset struct alignment to default
 #  pragma pack()
 
+#ifdef __cplusplus
+}
+#endif
 #endif // _LIBNFC_MIFARE_H_

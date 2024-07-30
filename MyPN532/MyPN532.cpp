@@ -223,7 +223,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (!file_exists(L"pn532_data/logs")) CreateDirectoryW(L"pn532_data/logs", 0);
 #else
 		vector<wstring> dirsWillUse{
-			L"keys", L"dumps", L"temp", L"cache", L"logs", L"config", L"redist"
+			L"keys", L"dumps", L"autodump",
+			L"temp", L"cache", L"logs",
+			L"config",
+			L"redist",
 		};
 		for (auto& i : dirsWillUse) {
 			auto fileType = IsFileOrDirectory(L"./" + i);

@@ -14,7 +14,7 @@
             <template #header>NFC 设备</template>
             <div style="margin-bottom: 0.5em;">
                 <b>默认设备</b><span>:&nbsp;</span>
-                <ElTooltip effect="dark" trigger="focus" :content="(cfgDefaultDevice ? parsedDefaultDevice[1] : '请前往设置')" placement="bottom-start">
+                <ElTooltip effect="dark" trigger="hover" :content="(cfgDefaultDevice ? parsedDefaultDevice[1] : '请前往设置')" placement="bottom-start">
                     <span tabindex="0">
                         <span v-text="(cfgDefaultDevice ? parsedDefaultDevice[0] : '未设置')" v-deep class="device-name-more-expand"></span>
                     </span>

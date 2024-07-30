@@ -48,17 +48,17 @@
         }
 
         require(['vs/editor/editor.main'], function () {
-            const diffEditor = monaco.editor.createDiffEditor(document.getElementById('container'), {
-                readonly: true,
-            });
+            const diffEditor = monaco.editor.createDiffEditor(document.getElementById('container'), {});
             const url = new URL(location.href);
-            const a = new URL('/api/v4.8/api/dumpfile', location.href);
+            const myurl = '/api/v4.8/api/dumpfile' + ((url.searchParams.get('autodump')) ? '?autodump=true' : '');
+
+            const a = new URL(myurl, location.href);
             a.searchParams.append('filename', url.searchParams.get('a'));
-            const b = new URL('/api/v4.8/api/dumpfile', location.href);
+            const b = new URL(myurl, location.href);
             b.searchParams.append('filename', url.searchParams.get('b'));
             Promise.all([fetch(a),fetch(b)]).then(async function (r) {
-                const originalTxt = groupHex(await formatHex(await r[0].blob()));
-                const modifiedTxt = groupHex(await formatHex(await r[1].blob()));
+                const originalTxt = '文件 ' + url.searchParams.get('a') + '\n' + groupHex(await formatHex(await r[0].blob()));
+                const modifiedTxt = '文件 ' + url.searchParams.get('b') + '\n' + groupHex(await formatHex(await r[1].blob()));
 
                 diffEditor.setModel({
                     original: monaco.editor.createModel(originalTxt, 'markdown'),

@@ -1,6 +1,122 @@
 <ActivityView v-deep>
-    <ActivityTitle>写标签</ActivityTitle>
+    <ActivityTitle v-deep :inert="(page > 1 && page < 100)">写标签</ActivityTitle>
+    <style>[inert]>>>{opacity: 0.5;}</style>
     <ActivityBody>
+        <dialog v-deep  @cancel.prevent @keydown.esc.prevent class="my-select-dialog" ref="keySelector">
+            <KeyReflect @selected="work" />
+        </dialog>
+        <dialog v-deep style="padding: 0; min-width: 50%;" @cancel.prevent @keydown.esc.prevent ref="sectorSelector">
+            <ActivityView>
+                <ActivityTitle>选择要写入的扇区</ActivityTitle>
+                <ActivityBody style="padding: 1em; overflow: hidden;">
+                    <div><ElCheckbox v-model="writeSectorAll">全选</ElCheckbox></div>
+                    <div style="flex: 1; overflow: auto; margin: 0.5em 0; ">
+                        <div v-for="i in writeSectorCount">
+                            <ElCheckbox :disabled="writeSectorAll" v-model="writeSectors[i-1]">扇区 {{i-1}}</ElCheckbox>
+                        </div>
+                    </div>
+                    <div><ElCheckbox v-model="writeDump.b0">启用块0写入</ElCheckbox></div>
+                    <div style="display: flex;">
+                        <ElButton style="flex: 1;" type="success" @click="selectsector(1)">继续</ElButton>
+                        <ElButton style="flex: 1;" type="danger" @click="selectsector(0)">取消</ElButton>
+                    </div>
+                </ActivityBody>
+            </ActivityView>
+        </dialog>
+        <ElCollapse v-if="page === 1" v-deep v-model="writePage" accordion>
+            <ElCollapseItem title="写块" name="block">
+                <div v-deep class="input-area"><span>扇区:</span><ElInput style="margin-left: 0.5em;" type="number" v-model="writeBlock.sector" :min="0" :max="255" /></div>
+                <div v-deep class="input-area"><span>块  :</span><ElInput style="margin-left: 0.5em;" type="number" v-model="writeBlock.block" :min="0" :max="15" /></div>
+                <div v-deep class="input-area"><span>值 (十六进制):</span><ElInput style="margin: 0 0.5em; flex: 1;" v-model="writeBlock.value" maxlength="32" show-word-limit :formatter="(value) => value.toUpperCase().replaceAll(/([\u0000-\u002f]|[\u003a-\u0040]|[\u0047-\uffff])/g, '')" /><span :style="{color:(writeBlock.value?.length===32?'#00aa00':'red')}">{{writeBlock.value?.length}} / 32</span></div>
+                <div v-deep class="input-area"><ElButton :disabled="writeBlock.value?.length !== 32" style="flex: 1;" type="primary" plain @click="run('executeWriteBlock')">开始写入</ElButton></div>
+            </ElCollapseItem>
 
+            <ElCollapseItem title="写入转储文件" name="dump">
+                <div v-deep class="input-area">
+                    <span>转储文件:</span>
+                    <ElSelect v-model="writeDump.file" style="margin: 0 0.5em; flex: 1;">
+                        <ElOption v-for="item in (writeDump.files)" :value="item">{{item}}</ElOption>
+                    </ElSelect>
+                    <ElButton @click="loadDumpfileList">重新加载文件列表</ElButton>
+                </div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" type="primary" plain @click="run('executeWriteDump')">开始写入</ElButton></div>
+            </ElCollapseItem>
+
+            <ElCollapseItem title="格式化" name="format">
+                <div v-deep class="input-area">尝试将标签格式化为工厂/交付状态</div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" type="primary" plain @click="run('executeFormat')">开始格式化</ElButton></div>
+            </ElCollapseItem>
+
+            <!-- <ElCollapseItem title="增减值块" name="crease">
+            </ElCollapseItem> -->
+
+            <style>
+            [v-deep] .el-collapse-item__content {
+                --el-collapse-content-font-size: initial;
+            }
+            </style>
+        </ElCollapse>
+        <template v-if="page === 2">
+            <div>已选择 {{userkeyfile.length}} 个密钥文件</div>
+            <div><b>已发送请求，正在等待服务器响应...</b></div>
+        </template>
+        <template v-if="page === 3 || page === 9999">
+            <div style="display: flex; align-items: center; justify-content: center; border-bottom: 1px solid; padding-bottom: 0.5em; margin-bottom: 1em;">
+                <span v-if="page === 3">已选择 {{userkeyfile.length}} 个密钥文件</span>
+                <div style="font-size: x-large; color: green;" v-if="page === 9999">标签写入成功!</div>
+                <ElButton type="success" plain @click="gotoDumpFile" v-if="page === 9999" style="margin-left: 0.5em;">前往查看</ElButton>
+                <ElButton text size="small" @click="show_advanced = false" v-if="show_advanced" style="margin-left: 0.5em;">显示更少...</ElButton>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" v-show="show_advanced">
+                <ElProgress :text-inside="true" :stroke-width="25" :percentage="read_percent" status="success" v-if="show_advanced" />
+                <div style="border: 1px solid; border-radius: 10px; padding: 10px; overflow: auto; white-space: pre; flex: 1; margin-top: 0.5em;" ref="logDiv">
+                    <div style="position: sticky; top: 0; left: 0; background-color: #fff; margin-bottom: 0.5em; padding-bottom: 0.5em; border-bottom: 1px solid gray;">操作日志</div>
+                </div>
+            </div>
+            <div style="flex: 1; display: grid; place-items: center;" v-if="!show_advanced">
+                <div style="text-align: center;">
+                    <div style="margin-bottom: 1em;" v-if="page === 3">正在写入标签...</div>
+                    <div style="margin-bottom: 0.5em; font-size: x-large; color: green;" v-if="page === 9999">标签写入成功!</div>
+                    <div style="margin-bottom: 1em; user-select: none; font-family: Consolas;" v-if="page === 9999">文件名: <span style="user-select: all;" v-text="dumpFile"></span></div>
+                    <ElProgress type="circle" :percentage="read_percent" :status="read_percent >= 100 ? 'success' : undefined" />
+                    <div style="margin-top: 1em;"><ElButton type="success" plain @click="gotoDumpFile" v-if="page === 9999">前往查看</ElButton></div>
+                    <div style="margin-top: 1em;"><ElButton text size="small" @click="show_advanced = true">显示更多...</ElButton></div>
+                </div>
+            </div>
+        </template>
+        <template v-if="page >= 10001 && page < 11000">
+            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div style="color: red; font-size: x-large; text-align: center; margin-bottom: 1em; padding-bottom: 0.5em; border-bottom: 1px solid;">出现错误！(错误代码：{{page}}) <ElButton text @click="retryAction">重试</ElButton></div>
+                <div v-text="errorText" style="flex: 1; overflow: auto; white-space: pre;"></div>
+            </div>
+        </template>
     </ActivityBody>
+    <style>
+        .input-area>>> {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+        .input-area>>> {
+            margin-bottom: 0.5em;
+        }
+        .input-area>>> .el-input, .input-area>>> .el-select {
+            --el-input-width: auto;
+            --el-select-width: auto;
+        }
+        .my-select-dialog>>> {
+            width: var(--size); height: var(--size);
+            --size: calc(100%);
+            max-width: 100%; max-height: 100%;
+            box-sizing: border-box;
+            padding: 0;
+            border: 0;
+            z-index: 999;
+            position: fixed;
+            inset: 0;
+        }
+        dialog>>>::backdrop {
+            transition: all 0.2s allow-discrete;
+        }
+    </style>
 </ActivityView>

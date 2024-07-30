@@ -33,10 +33,34 @@
     <ClCompile Include="mfclassic.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="mifare.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mfclassic-read.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mfoc-codes\crapto1.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mfoc-codes\crypto1.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mfoc-codes\slre.c">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mful.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\resource\tool.h">
       <Filter>TOOL文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mfoc-codes\crapto1.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="mfoc-codes\slre.h">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -41,6 +41,7 @@ namespace server {
 			ADD_METHOD_TO(server::MainServer::webconfig, "/api/v4.8/user/web/config", Get, Post, Put, Patch, Delete, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::keyfile, "/api/v4.8/api/keyfile", Head, Get, Post, Put, Patch, Options, Delete, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::dumpfile, "/api/v4.8/api/dumpfile", Head, Get, Post, Put, Patch, Options, Delete, "server::AuthFilter");
+			ADD_METHOD_TO(server::MainServer::deleteautodump, "/api/v4.8/api/deleteautodump", Post, Options, "server::AuthFilter");
 
 			ADD_METHOD_TO(server::MainServer::launchcmd, "/api/v4.8/native/launchcmd", Post, "server::AuthFilter");
 
@@ -49,6 +50,9 @@ namespace server {
 			ADD_METHOD_TO(server::MainServer::taginfo, "/api/v4.8/nfc/taginfo", Get, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::defaultdevice, "/api/v4.8/nfc/defaultdevice", Get, Put, Delete, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::testdevice, "/api/v4.8/nfc/testdevice", Post, Options, "server::AuthFilter");
+			
+			ADD_METHOD_TO(server::MainServer::readultralight, "/api/v4.8/nfc/ultralight/read", Post, Options, "server::AuthFilter");
+			ADD_METHOD_TO(server::MainServer::writeultralight, "/api/v4.8/nfc/ultralight/write", Post, Options, "server::AuthFilter");
 
 		METHOD_LIST_END
 
@@ -62,6 +66,7 @@ namespace server {
 		void webconfig(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void keyfile(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void dumpfile(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		void deleteautodump(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 
 		void launchcmd(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 
@@ -70,6 +75,9 @@ namespace server {
 		void scandevice(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void defaultdevice(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void testdevice(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		
+		void readultralight(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		void writeultralight(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 
 
 	public:
