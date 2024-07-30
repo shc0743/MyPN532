@@ -43,11 +43,6 @@ const data = {
     },
 
     methods: {
-        rununlockuid() {
-            this.unlockuid = true;
-            this.use_mfoc = false;
-            this.startRead([]);
-        },
         ontick() {
             if (this.read_percent < 95) ++this.read_percent;
         },
@@ -59,7 +54,7 @@ const data = {
             this.userkeyfile = keylist;
             this.page = 1;
 
-            userconfig.put('nfc.read.default.mfoc', String(this.use_mfoc)).catch(() => {});
+            if (!this.unlockuid) userconfig.put('nfc.read.default.mfoc', String(this.use_mfoc)).catch(() => {});
 
             const senderId = String(new Date().getTime());
             const handler = (ws, data) => {
@@ -154,6 +149,11 @@ const data = {
             }
             appInstance_.ws.registerHandler('session-ended', handler_end);
             appInstance_.ws.s({ type: 'create-session', senderId });
+        },
+        rununlockuid() {
+            this.unlockuid = true;
+            this.use_mfoc = false;
+            this.startRead([]);
         },
         retryAction() {
             globalThis.appInstance_.instance.current_page = 'blank';
