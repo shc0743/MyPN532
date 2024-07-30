@@ -123,7 +123,7 @@ const data = {
                             
                             default:
                                 if (typeof data !== 'string')
-                                    console.warn('[tag-read]', 'unknown data tyoe:', data);
+                                    console.warn('[tag-read]', 'unknown data type:', data);
                         }
                         // if (log) {
                         //     const el = document.createElement('div');
