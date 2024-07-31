@@ -54,9 +54,6 @@
     <ClCompile Include="mfoc-codes\slre.c">
       <Filter>mfoc-codes</Filter>
     </ClCompile>
-    <ClCompile Include="mfoc-codes\mifare-mfoc.c">
-      <Filter>mfoc-codes</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\resource\tool.h">
@@ -66,9 +63,6 @@
       <Filter>mfoc-codes</Filter>
     </ClInclude>
     <ClInclude Include="mfoc-codes\slre.h">
-      <Filter>mfoc-codes</Filter>
-    </ClInclude>
-    <ClInclude Include="mfoc-codes\mifare-mfoc.h">
       <Filter>mfoc-codes</Filter>
     </ClInclude>
   </ItemGroup>
