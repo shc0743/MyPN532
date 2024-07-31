@@ -14,7 +14,7 @@ const data = {
                 children: 'children',
                 label: 'label',
             },
-
+            showDeviceTour: false,
         }
     },
 
@@ -61,7 +61,10 @@ const data = {
             this.nfcDevices.length = 0;
             try {
                 this.cfgDefaultDevice = await (await fetch('/api/v4.8/nfc/defaultdevice')).text()//userconfig.get('nfc.device.default');
-                if (!this.cfgDefaultDevice) await this.loadDevList(false);
+                if (!this.cfgDefaultDevice) {
+                    await this.loadDevList(false);
+                    this.showDeviceTour = true;
+                }
             } catch (error) {
                 console.error('[settings]', 'cannot load settings: ', error);
                 try { await ElMessageBox.alert('无法加载设置！错误：' + error, '选项', {

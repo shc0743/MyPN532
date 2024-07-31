@@ -8,6 +8,7 @@ const data = {
     data() {
         return {
             sectors: [],
+            isEmpty: false,
 
         }
     },
@@ -29,6 +30,7 @@ const data = {
             const arrayBuffer = await this.data.arrayBuffer();
             const uint8Array = new Uint8Array(arrayBuffer);
             this.sectors.length = 0;
+            this.isEmpty = false;
             let hexString = '', buffer = [];
             for (let i = 0, l = uint8Array.length; i < l; i++) {
                 // if (this.isMonacoMode) {
@@ -51,6 +53,7 @@ const data = {
                     }
                 }
             }
+            if (this.sectors.length < 1) this.isEmpty = true;
             
         },
         getData() {

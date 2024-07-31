@@ -38,7 +38,8 @@ const data = {
             networkCongestion: false,
             is_connected: false,
             advancedUser: true,
-            advancedUserOptions: '0',
+            advancedUserOptions: '1',
+            showGuide: false,
         };
     },
 
@@ -143,7 +144,11 @@ const data = {
         apptitle() {
             globalThis.document.title = this.apptitle;
         },
-        
+        showGuide(newValue, oldValue) {
+            if (newValue === false && oldValue === true) {
+                userconfig.put('noguide', true);
+            }
+        },
 
     },
 

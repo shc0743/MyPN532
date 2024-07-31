@@ -47,7 +47,7 @@ main[v-deep] .error-view {
         </div>
     </div>
     <!-- <div style="font-family: 'SDK_SC_Web', Consolas, monospace; display: flex;"> -->
-        <div v-show="networkTimeout >= 0" :style="networkTimeout_style">
+        <div class="network-timeout" v-deep v-show="networkTimeout >= 0" :style="networkTimeout_style">
             <span style="display: inline-block; background-color: var(--ball-color); aspect-ratio: 1; width: 0.5em; height: 0.5em; border-radius: 50%; margin-right: 0.5em;"></span>
             <span>{{networkTimeout===-1?'--':(networkCongestion?((networkTimeout<1000)?999:networkTimeout):networkTimeout)}}ms</span>
         </div>
@@ -74,9 +74,15 @@ main[v-deep] .error-view {
                     grid-template-columns: 1fr 1fr;
                     place-items: center;
                 }
+                .big-screen-placeholder>>> {
+                    display: none;
+                }
                 @media screen and (min-width: 600px) {
                     .welcome-view-container>>> {
                         grid-template-columns: 1fr 1fr 1fr 1fr;
+                    }
+                    .big-screen-placeholder>>> {
+                        display: revert;
                     }
                 }
                 .welcome-view>>> .my-card>>> {
@@ -106,7 +112,7 @@ main[v-deep] .error-view {
                 }
             </style>
 
-            <div class="welcome-view-container" v-deep>
+            <div class="welcome-view-container" v-deep :inert="showGuide">
                 <a v-if="advancedUser" href="#/tag/read" class="my-card" tabindex="0" role="link" v-deep>
                     <img width="100" src="/assets/MCT-drawable/read_tag.png">
                     <span>读标签</span>
@@ -127,7 +133,7 @@ main[v-deep] .error-view {
                     <span>编辑密钥文件</span>
                 </a>
 
-                <div v-if="!advancedUser"></div>
+                <div v-if="!advancedUser" v-deep class="big-screen-placeholder"></div>
                 
                 <a href="#/ndef/" class="my-card" tabindex="0" role="link" v-deep>
                     <img width="100" src="/assets/MCT-drawable/edit_dump.png">
@@ -181,19 +187,87 @@ main[v-deep] .error-view {
                 <div>
                     <ElRadio value="0" size="large" v-model="advancedUserOptions">基本模式</ElRadio>
                     <blockquote>
-                        使用基础的标签读写功能，用于读写NDEF格式的数据，适合一般用户使用
+                        使用基础的标签读写功能，用于读写NDEF格式的数据，适合入门用户使用
                     </blockquote>
                 </div>
                 <div>
                     <ElRadio value="1" size="large" v-model="advancedUserOptions">高级模式</ElRadio>
                     <blockquote>
-                        使用高级的标签读写功能，用于读写十六进制的数据，支持使用密钥文件，适合高级用户使用
+                        使用高级的标签读写功能，用于读写所有格式的数据，适合大多数用户使用
                     </blockquote>
                 </div>
             </div>
             <div style="color: #606060;">您随时可以在设置中更改此选项。</div>
             <div style="margin-top: 0.5em; padding-top: 0.5em; border-top: 1px solid; display: flex;"><ElButton type="primary" plain style="flex: 1" @click="applyAdvancedUserOptions">完成</ElButton></div>
         </dialog>
+
+        <ElTour v-if="current_page === 'main'" v-model="showGuide">
+            <ElTourStep title="欢迎使用" :next-button-props="{children:'让我们开始吧'}">
+                <div style="font-size: x-large; font-weight: bold; text-align: center;">欢迎使用此NFC工具！</div>
+            </ElTourStep>
+
+            <template v-if="advancedUser">
+            <ElTourStep target="a.my-card>>>:nth-child(1)" title="读取标签" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>使用“读标签”功能可以读取标签，支持 Mifare Classic 、 Mifare Ultralight 以及 Ntag!</div>
+            </ElTourStep>
+
+            <ElTourStep target="a.my-card>>>:nth-child(2)" title="写入标签" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>使用“写标签”功能可以写入标签，支持 Mifare Classic 、 Mifare Ultralight 以及 Ntag!</div>
+            </ElTourStep>
+
+            <ElTourStep target="a.my-card>>>:nth-child(3)" title="编辑转储文件" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>使用“编辑转储文件”功能可以查看或编辑转储文件，支持以十六进制进行编辑（可保存）或以ASCII编码进行查看（只读）!</div>
+            </ElTourStep>
+
+            <ElTourStep target="a.my-card>>>:nth-child(4)" title="编辑密钥文件" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>使用“编辑密钥文件”功能可以查看或编辑密钥文件，支持直接编辑或从本地进行添加!</div>
+            </ElTourStep>
+
+            <ElTourStep target="a.my-card>>>:nth-child(5)" title="NDEF编辑器" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>使用“NDEF编辑器”可以以NDEF格式对标签数据进行编辑，常用于使手机能直接识别标签!</div>
+            </ElTourStep>
+
+            <ElTourStep target="a.my-card>>>:nth-child(6)" title="命令提示符" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>使用“命令提示符”功能可以打开一个CMD窗口!</div>
+            </ElTourStep>
+
+            <ElTourStep target="a.my-card>>>:nth-child(7)" title="工具" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>“工具”中有许多实用小工具，包括查看标签基本信息、扫描已连接的设备等！</div>
+                <div><b>*</b>&nbsp;提示：您也可以在“工具”中再次查看此向导！</div>
+            </ElTourStep>
+
+            <ElTourStep target="a.my-card>>>:nth-child(8)" title="选项" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>在“选项”中可以设置应用程序的一些选项，包括默认连接的设备、应用程序模式等!</div>
+            </ElTourStep>
+
+            <ElTourStep target="a.my-card>>>:nth-child(8)" title="默认设备" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>如果更改了NFC设备插入的位置导致本来能连上的设备无法连接，可以在“选项”中重新设置设备来解决!</div>
+            </ElTourStep>
+            </template>
+            <template v-else>
+            <ElTourStep target="a.my-card>>>:nth-child(2)" title="编辑标签" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>使用“编辑标签”功能可以编辑标签数据!</div>
+            </ElTourStep>
+            <ElTourStep target="a.my-card>>>:nth-child(3)" title="选项" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>在“选项”中可以设置应用程序的一些选项，包括默认连接的设备、应用程序模式等!</div>
+            </ElTourStep>
+            <ElTourStep target="a.my-card>>>:nth-child(3)" title="默认设备" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>如果更改了NFC设备插入的位置导致本来能连上的设备无法连接，可以在“选项”中重新设置设备来解决!</div>
+            </ElTourStep>
+            </template>
+
+            <ElTourStep target=".network-timeout>>>" title="连接延迟" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                <div>此处会实时显示与主程序的连接延迟!</div>
+            </ElTourStep>
+
+            <ElTourStep title="欢迎使用" :next-button-props="{children:'完成'}" :prev-button-props="{children:'上一步'}">
+                <div>开始使用此工具吧!</div>
+            </ElTourStep>
+
+            <template #indicators="{ current, total }">
+                <span>{{ current + 1 }} / {{ total }}</span>
+            </template>
+        </ElTour>
 
 
     </main>

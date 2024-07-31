@@ -1,6 +1,69 @@
 <ActivityView v-deep>
     <ActivityTitle>NDEF</ActivityTitle>
-    <ActivityBody>
+    <ActivityBody style="overflow: hidden; display: flex; flex-direction: column;">
+        <div><ElSegmented v-model="currentTab" :options="tabsAvailable" size="large" :disabled="page > 1" /></div>
+
+        <div class="tabContainer" v-deep>
+            <div v-if="currentTab === 'read'">
+                <div v-deep class="input-area"><ElButton style="flex: 1;" type="primary" plain @click>开始读取</ElButton></div>
+            </div>
+
+            <div v-if="currentTab === 'write'">
+                <div v-deep class="input-area"><ElButton style="flex: 1;" type="primary" plain @click>开始写入</ElButton></div>
+            </div>
+
+            <div v-if="currentTab === 'more'">
+                <div v-deep class="input-area"><ElButton style="flex: 1;" @click>清除标签</ElButton></div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" @click>格式化标签</ElButton></div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" @click>设置密码</ElButton></div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" @click>删除密码</ElButton></div>
+            </div>
+
+        </div>
 
     </ActivityBody>
+    
+    <style>
+        .tabContainer>>> {
+            margin-top: 0.5em;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: auto;
+        }
+
+        .input-area>>> {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+    
+        .input-area>>> {
+            margin-bottom: 0.5em;
+        }
+    
+        .input-area>>>.el-input,
+        .input-area>>>.el-select {
+            --el-input-width: auto;
+            --el-select-width: auto;
+        }
+    
+        .my-dialog>>> {
+            width: var(--size);
+            height: var(--size);
+            --size: calc(100%);
+            max-width: 100%;
+            max-height: 100%;
+            box-sizing: border-box;
+            padding: 0;
+            border: 0;
+            z-index: 999;
+            position: fixed;
+            inset: 0;
+        }
+    
+        dialog>>>::backdrop {
+            transition: all 0.2s allow-discrete;
+        }
+    </style>
 </ActivityView>

@@ -307,8 +307,15 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		SetMprgWizardText(hWiz, L"正在检测系统环境...");
 		SetMprgWizardValue(hWiz, 10);
+		if (1 != IsFileOrDirectory(L"./pn532_data/bin/self/service.exe")) {
+			MessageBoxTimeoutW(GetMprgHwnd(hWiz), L"文件损坏！请重新下载程序。\n"
+				L"损坏的文件是: ./pn532_data/bin/self/service.exe", 0,
+				MB_ICONERROR, 0, 30000);
+			DeleteMprgObject(hObj);
+			return ERROR_FILE_CORRUPT;
+		}
 	checkRuntime:
-		if (Process.StartAndWait(L"./pn532_data/bin/self/service"
+		if (Process.StartAndWait(L"./pn532_data/bin/self/service.exe"
 			" --type=test-app") != 0x12345678) {
 			if (IDOK == MessageBoxTimeoutW(GetMprgHwnd(hWiz),
 				L"需要安装运行库才能启动应用程序！是否前往下载安装？",

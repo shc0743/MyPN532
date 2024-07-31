@@ -165,9 +165,9 @@ const data = {
 
                 if (this.isAutoDump) try {
                     const filename = (await ElMessageBox.prompt('标签读取成功！要立即保存 ' + this.file + ' 吗?', '转储文件编辑器', {
-                        type: 'info',
+                        type: 'success',
                         confirmButtonText: '立即保存',
-                        cancelButtonText: '仅查看',
+                        cancelButtonText: '以后再保存',
                         inputValue: this.file.replace(/autodump$/i, 'dump'),
                     })).value;
                     if (!filename) throw -1;

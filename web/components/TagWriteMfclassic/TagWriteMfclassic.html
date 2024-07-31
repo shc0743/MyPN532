@@ -68,7 +68,7 @@
                 <ElButton text size="small" @click="show_advanced = false" v-if="show_advanced" style="margin-left: 0.5em;">显示更少...</ElButton>
             </div>
             <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" v-show="show_advanced">
-                <ElProgress :text-inside="true" :stroke-width="25" :percentage="read_percent" status="success" v-if="show_advanced" />
+                <ElProgress :text-inside="true" :stroke-width="25" :percentage="write_percent" status="success" v-if="show_advanced" />
                 <div style="border: 1px solid; border-radius: 10px; padding: 10px; overflow: auto; white-space: pre; flex: 1; margin-top: 0.5em;" ref="logDiv">
                     <div style="position: sticky; top: 0; left: 0; background-color: #fff; margin-bottom: 0.5em; padding-bottom: 0.5em; border-bottom: 1px solid gray;">操作日志</div>
                 </div>
@@ -78,7 +78,7 @@
                     <div style="margin-bottom: 1em;" v-if="page === 3">正在写入标签...</div>
                     <div style="margin-bottom: 0.5em; font-size: x-large; color: green;" v-if="page === 9999">标签写入成功!</div>
                     <div style="margin-bottom: 1em; user-select: none; font-family: Consolas;" v-if="page === 9999">文件名: <span style="user-select: all;" v-text="dumpFile"></span></div>
-                    <ElProgress type="circle" :percentage="read_percent" :status="read_percent >= 100 ? 'success' : undefined" />
+                    <ElProgress type="circle" :percentage="write_percent" :status="write_percent >= 100 ? 'success' : undefined" />
                     <div style="margin-top: 1em;"><ElButton type="success" plain @click="gotoDumpFile" v-if="page === 9999">前往查看</ElButton></div>
                     <div style="margin-top: 1em;"><ElButton text size="small" @click="show_advanced = true">显示更多...</ElButton></div>
                 </div>

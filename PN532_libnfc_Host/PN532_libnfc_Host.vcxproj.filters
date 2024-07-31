@@ -16,6 +16,9 @@
     <Filter Include="TOOL文件">
       <UniqueIdentifier>{89a8ebbb-3412-44ff-942b-4c53b147a2f0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="mfoc-codes">
+      <UniqueIdentifier>{9d0d0f70-1efe-46d8-bcd4-7b3ded43c0ad}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="PN532_libnfc_Host.cpp">
@@ -39,17 +42,20 @@
     <ClCompile Include="mfclassic-read.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="mfoc-codes\crapto1.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="mfoc-codes\crypto1.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
-    <ClCompile Include="mfoc-codes\slre.c">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="mful.cpp">
       <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="mfoc-codes\crapto1.c">
+      <Filter>mfoc-codes</Filter>
+    </ClCompile>
+    <ClCompile Include="mfoc-codes\crypto1.c">
+      <Filter>mfoc-codes</Filter>
+    </ClCompile>
+    <ClCompile Include="mfoc-codes\slre.c">
+      <Filter>mfoc-codes</Filter>
+    </ClCompile>
+    <ClCompile Include="mfoc-codes\mifare-mfoc.c">
+      <Filter>mfoc-codes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -57,10 +63,13 @@
       <Filter>TOOL文件</Filter>
     </ClInclude>
     <ClInclude Include="mfoc-codes\crapto1.h">
-      <Filter>头文件</Filter>
+      <Filter>mfoc-codes</Filter>
     </ClInclude>
     <ClInclude Include="mfoc-codes\slre.h">
-      <Filter>头文件</Filter>
+      <Filter>mfoc-codes</Filter>
+    </ClInclude>
+    <ClInclude Include="mfoc-codes\mifare-mfoc.h">
+      <Filter>mfoc-codes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

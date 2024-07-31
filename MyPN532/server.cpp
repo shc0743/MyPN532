@@ -486,6 +486,13 @@ void server::MainServer::defaultdevice(const HttpRequestPtr& req, std::function<
 			}
 			CloseHandle(fp);
 		}
+		if (!u8str.empty()) {
+			DWORD code = Process.StartAndWait(L"bin/self/service --type=test-device");
+			if (code) {
+				u8str = ""; // 设备无法识别，可能是因为更换了USB插口等
+				resp->addHeader("x-device-not-recognized", "true");
+			}
+		}
 		resp->setBody(u8str);
 	}
 

@@ -48,6 +48,10 @@ const data = {
                 this.nfcTagTypeInfo = '!!检测失败!!\n\n' +error;
             })
         },
+        showGuideAgain() {
+            globalThis.appInstance_.instance.showGuide = true;
+            location.href = '#/';
+        },
 
     },
 

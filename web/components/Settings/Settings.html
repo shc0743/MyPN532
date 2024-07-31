@@ -19,11 +19,11 @@
                         <span v-text="(cfgDefaultDevice ? parsedDefaultDevice[0] : '未设置')" v-deep class="device-name-more-expand"></span>
                     </span>
                 </ElTooltip>
-                <a href="#" style="margin-left: 1em;" @click.prevent="editDeviceName">改名</a>
+                <a href="#" style="margin-left: 1em;" @click.prevent="editDeviceName" v-deep class="edit-device-name">改名</a>
                 <a href="#" style="margin-left: 1em;" @click.prevent="setDefaultDevice(null)">清除</a>
             </div>
-            <div><b>设备列表:&nbsp;</b><a href="#" @click.prevent="loadDevList">扫描设备</a></div>
-            <ElTree :data="nfcDevicesComputed" :props="defaultProps">
+            <div><b>设备列表:&nbsp;</b><a v-deep class="scan-device" href="#" @click.prevent="loadDevList" :inert="showDeviceTour">扫描设备</a></div>
+            <ElTree v-deep class="device-tree" :data="nfcDevicesComputed" :props="defaultProps">
                 <template #default="{ node, data }">
                     <span class="custom-tree-node" v-deep>
                         <span>{{ node.label }}</span>
@@ -34,7 +34,27 @@
                     </span>
                 </template>
                 <template #empty>点击「扫描设备」以加载设备列表</template>
-            </ElTree>   
+            </ElTree>
+            <ElTour v-if="showDeviceTour" v-model="showDeviceTour">
+                <ElTourStep title="设置 NFC 设备" :next-button-props="{children:'继续'}">
+                    <div style="font-weight: bold; margin-bottom: 0.5em; text-align: center; font-size: x-large;">欢迎设置 NFC 设备！</div>
+                    <div style="text-indent: 2em;">本向导将指导您完成NFC设备的设置过程。若要继续，请按“继续”按钮。</div>
+                </ElTourStep>
+                <ElTourStep target=".scan-device>>>" title="设置 NFC 设备" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                    <div style="font-weight: bold; margin-bottom: 0.5em;">第1步：</div>
+                    <div style="padding-left: 1em;">点击「扫描设备」以加载设备列表 <b>(已完成)</b></div>
+                </ElTourStep>
+                <ElTourStep target=".device-tree>>>" title="设置 NFC 设备" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                    <div style="font-weight: bold; margin-bottom: 0.5em;">第2步：</div>
+                    <div style="padding-left: 1em;">点击「设为默认」以设置默认设备</div>
+                </ElTourStep>
+                <ElTourStep target=".edit-device-name>>>" title="设置 NFC 设备" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
+                    <div>可以在这里修改设备名称 (仅展示用，没有实际影响)</div>
+                </ElTourStep>
+                <ElTourStep target=".device-name-more-expand>>>" title="设置 NFC 设备" :next-button-props="{children:'完成'}" :prev-button-props="{children:'上一步'}">
+                    <div>鼠标悬浮在这里可以查看设备的连接字符串 (connstring)</div>
+                </ElTourStep>
+            </ElTour>
         </ElCard>
         <ElCard style="margin-top: 1em;">
             <!-- <template #header></template> -->

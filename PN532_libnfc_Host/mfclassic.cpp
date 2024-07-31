@@ -164,7 +164,10 @@ authenticate(uint32_t uiBlock)
 			return true;
 
 		// If formatting or not using key file, try to guess the right key
-	} else 
+	}
+#if 0
+	else 
+#endif
 #endif
 	 {
 		for (size_t key_index = 0; key_index < num_keys; key_index++) {
@@ -287,6 +290,7 @@ read_card(bool read_unlocked)
 		if (dWrite) {
 			printf("Note: This card can't do an unlocked read (R) \n");
 			read_unlocked = 0;
+			return false;
 		}
 	}
 

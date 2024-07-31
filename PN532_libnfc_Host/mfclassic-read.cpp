@@ -42,12 +42,304 @@
   // NFC
 #include <nfc/nfc.h>
 
-#include "mifare.h"
 #include "mfoc-codes/slre.h"
-#include "../../resource/tool.h"
 #include "mfoc-codes/crapto1.h"
+#include "../../resource/tool.h"
 using namespace std;
 
+#pragma region mifare.h
+/*-
+ * Public platform independent Near Field Communication (NFC) library examples
+ *
+ * Copyright (C) 2009 Roel Verdult
+ * Copyright (C) 2010 Romain Tartière
+ * Copyright (C) 2010, 2011, 2013 Romuald Conty
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *  1) Redistributions of source code must retain the above copyright notice,
+ *  this list of conditions and the following disclaimer.
+ *  2 )Redistributions in binary form must reproduce the above copyright
+ *  notice, this list of conditions and the following disclaimer in the
+ *  documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Note that this license only applies on the examples, NFC library itself is under LGPL
+ *
+ */
+
+/**
+ * @file mifare.h
+ * @brief provide samples structs and functions to manipulate MIFARE Classic and Ultralight tags using libnfc
+ */
+
+#ifndef _LIBNFC_MIFARE_H_
+#define _LIBNFC_MIFARE_H_
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+// Compiler directive, set struct alignment to 1 uint8_t for compatibility
+#pragma pack(1)
+
+typedef enum {
+  MC_AUTH_A = 0x60,
+  MC_AUTH_B = 0x61,
+  MC_READ = 0x30,
+  MC_WRITE = 0xA0,
+  MC_TRANSFER = 0xB0,
+  MC_DECREMENT = 0xC0,
+  MC_INCREMENT = 0xC1,
+  MC_STORE = 0xC2
+} mifare_cmd;
+
+// MIFARE command params
+struct mifare_param_auth {
+  uint8_t  abtKey[6];
+  uint8_t  abtAuthUid[4];
+};
+
+struct mifare_param_data {
+  uint8_t  abtData[16];
+};
+
+struct mifare_param_value {
+  uint8_t  abtValue[4];
+};
+
+typedef union {
+  struct mifare_param_auth mpa;
+  struct mifare_param_data mpd;
+  struct mifare_param_value mpv;
+} mifare_param;
+
+// Reset struct alignment to default
+#  pragma pack()
+
+static int    nfc_initiator_mifare_cmd(nfc_device *pnd, const mifare_cmd mc, const uint8_t ui8Block, mifare_param *pmp);
+
+// Compiler directive, set struct alignment to 1 uint8_t for compatibility
+#  pragma pack(1)
+
+// MIFARE Classic
+typedef struct {
+  uint8_t  abtUID[4];
+  uint8_t  btBCC;
+  uint8_t  btUnknown;
+  uint8_t  abtATQA[2];
+  uint8_t  abtUnknown[8];
+} mifare_classic_block_manufacturer;
+
+typedef struct {
+  uint8_t  abtData[16];
+} mifare_classic_block_data;
+
+typedef struct {
+  uint8_t  abtKeyA[6];
+  uint8_t  abtAccessBits[4];
+  uint8_t  abtKeyB[6];
+} mifare_classic_block_trailer;
+
+typedef union {
+  mifare_classic_block_manufacturer mbm;
+  mifare_classic_block_data mbd;
+  mifare_classic_block_trailer mbt;
+} mifare_classic_block;
+
+typedef struct {
+  mifare_classic_block amb[256];
+} mifare_classic_tag;
+
+// MIFARE Ultralight
+typedef struct {
+  uint8_t  sn0[3];
+  uint8_t  btBCC0;
+  uint8_t  sn1[4];
+  uint8_t  btBCC1;
+  uint8_t  internal;
+  uint8_t  lock[2];
+  uint8_t  otp[4];
+} mifareul_block_manufacturer;
+
+typedef struct {
+  uint8_t  abtData[16];
+} mifareul_block_data;
+
+typedef union {
+  mifareul_block_manufacturer mbm;
+  mifareul_block_data mbd;
+} mifareul_block;
+
+typedef struct {
+  mifareul_block amb[4];
+} mifareul_tag;
+
+// Reset struct alignment to default
+#  pragma pack()
+
+#ifdef __cplusplus
+}
+#endif
+#endif // _LIBNFC_MIFARE_H_
+
+#pragma endregion
+#pragma region mifare.c
+/*-
+ * Public platform independent Near Field Communication (NFC) library examples
+ *
+ * Copyright (C) 2009 Roel Verdult
+ * Copyright (C) 2010 Romain Tartière
+ * Copyright (C) 2010, 2011, 2013 Romuald Conty
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *  1) Redistributions of source code must retain the above copyright notice,
+ *  this list of conditions and the following disclaimer.
+ *  2 )Redistributions in binary form must reproduce the above copyright
+ *  notice, this list of conditions and the following disclaimer in the
+ *  documentation and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ *
+ * Note that this license only applies on the examples, NFC library itself is under LGPL
+ *
+ */
+
+/**
+ * @file mifare.c
+ * @brief provide samples structs and functions to manipulate MIFARE Classic and Ultralight tags using libnfc
+ */
+
+/*
+ * This implementation was written based on information provided by the
+ * following document:
+ *
+ * MIFARE Classic Specification
+ *  MF1ICS50
+ *  Functional specification
+ *  Rev. 5.3 - 29 January 2008
+ *  http://www.nxp.com/acrobat/other/identification/M001053_MF1ICS50_rev5_3.pdf
+ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief Execute a MIFARE Classic command
+ * @return Returns NFC_SUCCESS if action was successfully performed; otherwise returns error code (negative value).
+ * @param pmp Some commands need additional information. This information should be supplied in the mifare_param union.
+ *
+ * The specified MIFARE command will be executed on the tag. There are
+ * different commands possible, they all require the destination block number.
+ *
+ * @note There are three different types of information (Authenticate, Data and Value).
+ *
+ * First an authentication must take place using Key A or B. It requires a 48 bit Key (6 bytes) and the UID.
+ * After a successful authentication it will be possible to execute other commands (e.g. Read/Write).
+ *
+ * Like libnfc's functions, this one returns negative value on error (libnfc's
+ * error code) but two of them need a special attention in this context (MIFARE
+ * Classic):
+ *  - NFC_EMFCAUTHFAIL, "MIFARE authentication failed", means key is not valid
+ *  on specified sector.
+ *  - NFC_ERFTRANS, "Invalid received frame", when occurs on MIFARE command
+ *  read or write after a successful authentication, means permissions allowed
+ *  by current acces bytes are not sufficient to process the command.
+ */
+static int
+nfc_initiator_mifare_cmd(nfc_device *pnd, const mifare_cmd mc, const uint8_t ui8Block, mifare_param *pmp)
+{
+  uint8_t  abtRx[265];
+  size_t  szParamLen;
+  uint8_t  abtCmd[265];
+
+  abtCmd[0] = mc;               // The MIFARE Classic command
+  abtCmd[1] = ui8Block;         // The block address (1K=0x00..0x39, 4K=0x00..0xff)
+
+  switch (mc) {
+      // Read and store command have no parameter
+    case MC_READ:
+    case MC_STORE:
+      szParamLen = 0;
+      break;
+
+      // Authenticate command
+    case MC_AUTH_A:
+    case MC_AUTH_B:
+      szParamLen = sizeof(struct mifare_param_auth);
+      break;
+
+      // Data command
+    case MC_WRITE:
+      szParamLen = sizeof(struct mifare_param_data);
+      break;
+
+      // Value command
+    case MC_DECREMENT:
+    case MC_INCREMENT:
+    case MC_TRANSFER:
+      szParamLen = sizeof(struct mifare_param_value);
+      break;
+
+      // Please fix your code, you never should reach this statement
+    default:
+      return NFC_EINVARG;
+      break;
+  }
+
+  // When available, copy the parameter bytes
+  if (szParamLen)
+    memcpy(abtCmd + 2, (uint8_t *) pmp, szParamLen);
+
+  // FIXME: Save and restore bEasyFraming
+  int res;
+  if ((res = nfc_device_set_property_bool(pnd, NP_EASY_FRAMING, true)) < 0) {
+    return res;
+  }
+  // Fire the mifare command
+  if ((res = nfc_initiator_transceive_bytes(pnd, abtCmd, 2 + szParamLen, abtRx, sizeof(abtRx), -1))  < 0) {
+    return res;
+  }
+
+  // When we have executed a read command, copy the received bytes into the param
+  if (mc == MC_READ) {
+    if (res == 16) {
+      memcpy(pmp->mpd.abtData, abtRx, 16);
+    } else {
+      return NFC_EINVARG;
+    }
+  }
+  // Command succesfully executed
+  return NFC_SUCCESS;
+}
+
+#ifdef __cplusplus
+}
+#endif
+#pragma endregion
 #pragma region mfoc.h
 #define MEM_CHUNK               10000
 #define TRY_KEYS                50
@@ -88,6 +380,7 @@ using namespace std;
 
 #define odd_parity(i) (( (i) ^ (i)>>1 ^ (i)>>2 ^ (i)>>3 ^ (i)>>4 ^ (i)>>5 ^ (i)>>6 ^ (i)>>7 ^ 1) & 0x01)
 
+extern "C" {
 typedef struct {
     uint8_t KeyA[6];
     uint8_t KeyB[6];
@@ -133,7 +426,6 @@ typedef struct {
 } countKeys;
 
 
-static void usage(FILE* stream, int errno);
 static void mf_init(mfreader* r);
 static void mf_configure(nfc_device* pdi);
 static void mf_select_tag(nfc_device* pdi, nfc_target* pnt);
@@ -150,10 +442,10 @@ static countKeys* uniqsort(uint64_t* possibleKeys, uint32_t size);
 static void num_to_bytes(uint64_t n, uint32_t len, uint8_t* dest);
 static long long unsigned int bytes_to_num(uint8_t* src, uint32_t len);
 
+}
 #pragma endregion
-
-
 #pragma region nfc-utils.h
+extern "C" {
 static uint8_t  oddparity(const uint8_t bt);
 static void    oddparity_bytes_ts(const uint8_t* pbtData, const size_t szLen, uint8_t* pbtPar);
 
@@ -172,6 +464,7 @@ oddparity_bytes_ts(const uint8_t* pbtData, const size_t szLen, uint8_t* pbtPar)
     for (szByteNr = 0; szByteNr < szLen; szByteNr++) {
         pbtPar[szByteNr] = oddparity(pbtData[szByteNr]);
     }
+}
 }
 #pragma endregion
 
@@ -212,16 +505,25 @@ int nfc_mfclassic_read(CmdLineW & cl) {
     bool skip = false;
 
     // Next default key specified as option (-k)
-    uint8_t* defKeys = NULL, * p;
-    size_t defKeys_len = 0;
+    //uint8_t* defKeys = NULL, * p;
+    //size_t defKeys_len = 0;
 
-    // Array with default Mifare Classic keys
-    uint8_t defaultKeys[][6] = {
+    //// Array with default Mifare Classic keys
+    //uint8_t defaultKeys[][6] = {
+    //  {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, // Default key (first key used by program if no user defined key)
+    //  {0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5}, // NFCForum MAD key
+    //  {0xd3, 0xf7, 0xd3, 0xf7, 0xd3, 0xf7}, // NFCForum content key
+    //  {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // Blank key
+    //}; 
+    const uint8_t MF_DEFAULT_KEYS[][6] = {
       {0xff, 0xff, 0xff, 0xff, 0xff, 0xff}, // Default key (first key used by program if no user defined key)
       {0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5}, // NFCForum MAD key
       {0xd3, 0xf7, 0xd3, 0xf7, 0xd3, 0xf7}, // NFCForum content key
       {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // Blank key
     };
+    struct MyKey { uint8_t value[6]; };
+    vector<MyKey> user_keys;
+
 
     mftag        t;
     mfreader    r;
@@ -246,7 +548,7 @@ int nfc_mfclassic_read(CmdLineW & cl) {
     char line[20];
     size_t len = 0;
     char* read;
-    size_t defKey_bytes_todo = defKeys_len;
+    //size_t defKey_bytes_todo = defKeys_len;
 
     //Regexp declarations
     static const char* regex = "([0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f])";
@@ -264,6 +566,7 @@ int nfc_mfclassic_read(CmdLineW & cl) {
             int i, j = 0, str_len = (int)strlen(line);
             while (j < str_len &&
                 (i = slre_match(regex, line + j, str_len - j, caps, 500, 1)) > 0) {
+#if 0
                 //We've found a key, let's add it to the structure.
                 p = (decltype(p))realloc(defKeys, defKeys_len + 6);
                 if (!p) {
@@ -275,6 +578,12 @@ int nfc_mfclassic_read(CmdLineW & cl) {
                 num_to_bytes(strtoll(caps[0].ptr, NULL, 16), 6, defKeys + defKeys_len);
                 //fprintf(stdout, "The custom key 0x%.*s has been added to the default keys\n", caps[0].len, caps[0].ptr);
                 defKeys_len = defKeys_len + 6;
+#else
+                MyKey mkey{};
+                num_to_bytes(strtoll(caps[0].ptr, NULL, 16), 6, mkey.value);
+                user_keys.push_back(mkey);
+
+#endif
                 ++count;
 
                 j += i;
@@ -299,28 +608,34 @@ int nfc_mfclassic_read(CmdLineW & cl) {
     // Initialize reader/tag structures
     mf_init(&r);
 
+    const auto myHandleError = [&] {
+        nfc_close(r.pdi);
+        nfc_exit(context);
+        exit(EXIT_FAILURE);
+    };
+
     if (nfc_initiator_init(r.pdi) < 0) {
         nfc_perror(r.pdi, "nfc_initiator_init");
-        goto error;
+        myHandleError();
     }
     // Drop the field for a while, so can be reset
     if (nfc_device_set_property_bool(r.pdi, NP_ACTIVATE_FIELD, true) < 0) {
         nfc_perror(r.pdi, "nfc_device_set_property_bool activate field");
-        goto error;
+        myHandleError();
     }
     // Let the reader only try once to find a tag
     if (nfc_device_set_property_bool(r.pdi, NP_INFINITE_SELECT, false) < 0) {
         nfc_perror(r.pdi, "nfc_device_set_property_bool infinite select");
-        goto error;
+        myHandleError();
     }
     // Configure the CRC and Parity settings
     if (nfc_device_set_property_bool(r.pdi, NP_HANDLE_CRC, true) < 0) {
         nfc_perror(r.pdi, "nfc_device_set_property_bool crc");
-        goto error;
+        myHandleError();
     }
     if (nfc_device_set_property_bool(r.pdi, NP_HANDLE_PARITY, true) < 0) {
         nfc_perror(r.pdi, "nfc_device_set_property_bool parity");
-        goto error;
+        myHandleError();
     }
 
     /*
@@ -331,17 +646,17 @@ int nfc_mfclassic_read(CmdLineW & cl) {
     int tag_count;
     if ((tag_count = nfc_initiator_select_passive_target(r.pdi, nm, NULL, 0, &t.nt)) < 0) {
         nfc_perror(r.pdi, "nfc_initiator_select_passive_target");
-        goto error;
+        myHandleError();
     }
     else if (tag_count == 0) {
         ERR("No tag found.");
-        goto error;
+        myHandleError();
     }
 
     // Test if a compatible MIFARE tag is used
     if (((t.nt.nti.nai.btSak & 0x08) == 0) && (t.nt.nti.nai.btSak != 0x01)) {
         ERR("only Mifare Classic is supported");
-        goto error;
+        myHandleError();
     }
 
     t.authuid = (uint32_t)bytes_to_num(t.nt.nti.nai.abtUid + t.nt.nti.nai.szUidLen - 4, 4);
@@ -376,21 +691,21 @@ int nfc_mfclassic_read(CmdLineW & cl) {
         break;
     default:
         ERR("Cannot determine card type from SAK");
-        goto error;
+        myHandleError();
     }
 
     t.sectors = (sector*)calloc(t.num_sectors, sizeof(sector));
     if (t.sectors == NULL) {
         ERR("Cannot allocate memory for t.sectors");
-        goto error;
+        myHandleError();
     }
     if ((pk = (pKeys*)malloc(sizeof(pKeys))) == NULL) {
         ERR("Cannot allocate memory for pk");
-        goto error;
+        myHandleError();
     }
     if ((bk = (bKeys*)malloc(sizeof(bKeys))) == NULL) {
         ERR("Cannot allocate memory for bk");
-        goto error;
+        myHandleError();
     }
     else {
         bk->brokenKeys = NULL;
@@ -400,7 +715,7 @@ int nfc_mfclassic_read(CmdLineW & cl) {
     d.distances = (uint32_t*)calloc(d.num_distances, sizeof(uint32_t));
     if (d.distances == NULL) {
         ERR("Cannot allocate memory for t.distances");
-        goto error;
+        myHandleError();
     }
 
     // Initialize t.sectors, keys are not known yet
@@ -415,17 +730,36 @@ int nfc_mfclassic_read(CmdLineW & cl) {
     // Set the authentication information (uid)
     memcpy(mp.mpa.abtAuthUid, t.nt.nti.nai.abtUid + t.nt.nti.nai.szUidLen - 4, sizeof(mp.mpa.abtAuthUid));
     // Iterate over all keys (n = number of keys)
-    n = sizeof(defaultKeys) / sizeof(defaultKeys[0]);
+    //n = sizeof(defaultKeys) / sizeof(defaultKeys[0]);
     key = 0;
-    while (key < n || defKey_bytes_todo) {
-        if (defKey_bytes_todo > 0) {
-            memcpy(mp.mpa.abtKey, defKeys + defKeys_len - defKey_bytes_todo, sizeof(mp.mpa.abtKey));
-            defKey_bytes_todo -= sizeof(mp.mpa.abtKey);
+    //defKey_bytes_todo = defKeys_len;
+    if (user_keys.empty()) {
+        // 使用默认密钥
+            // 遍历MF_DEFAULT_KEYS数组  
+        for (const auto& key : MF_DEFAULT_KEYS) {
+            // 创建一个MyKey实例并复制密钥数据  
+            MyKey newKey;
+            for (size_t i = 0; i < 6; ++i) {
+                newKey.value[i] = key[i];
+            }
+            // 将新创建的密钥添加到user_keys向量中  
+            user_keys.push_back(newKey);
         }
-        else {
-            memcpy(mp.mpa.abtKey, defaultKeys[key], sizeof(mp.mpa.abtKey));
-            key++;
-        }
+    }
+#if 0
+    while (key < n || defKey_bytes_todo)
+#else
+    for (const auto& userkey : user_keys)
+#endif
+    {
+        //if (user_keys.size() > 0) {
+            memcpy(mp.mpa.abtKey, userkey.value, sizeof(mp.mpa.abtKey));
+            //defKey_bytes_todo -= sizeof(mp.mpa.abtKey);
+        //}
+        //else {
+        //    memcpy(mp.mpa.abtKey, defaultKeys[key], sizeof(mp.mpa.abtKey));
+        //    key++;
+        //}
         fprintf(stdout, "[Key: %012llx] -> ", bytes_to_num(mp.mpa.abtKey, 6));
         fprintf(stdout, "[");
         i = 0; // Sector counter
@@ -438,7 +772,7 @@ int nfc_mfclassic_read(CmdLineW & cl) {
                     if ((res = nfc_initiator_mifare_cmd(r.pdi, mc, block, &mp)) < 0) {
                         if (res != NFC_EMFCAUTHFAIL) {
                             nfc_perror(r.pdi, "nfc_initiator_mifare_cmd");
-                            goto error;
+                            myHandleError();
                         }
                         mf_anticollision(t, r);
                     }
@@ -475,7 +809,7 @@ int nfc_mfclassic_read(CmdLineW & cl) {
                             else {
                                 if (res != NFC_ERFTRANS) {
                                     nfc_perror(r.pdi, "nfc_initiator_mifare_cmd");
-                                    goto error;
+                                    myHandleError();
                                 }
                                 mf_anticollision(t, r);
                             }
@@ -489,7 +823,7 @@ int nfc_mfclassic_read(CmdLineW & cl) {
                     if ((res = nfc_initiator_mifare_cmd(r.pdi, mc, block, &mp)) < 0) {
                         if (res != NFC_EMFCAUTHFAIL) {
                             nfc_perror(r.pdi, "nfc_initiator_mifare_cmd");
-                            goto error;
+                            myHandleError();
                         }
                         mf_anticollision(t, r);
                         // No success, try next block
@@ -547,205 +881,10 @@ int nfc_mfclassic_read(CmdLineW & cl) {
     }
     fflush(stdout);
 
-#if 0
     // Return the first (exploit) sector encrypted with the default key or -1 (we have all keys)
     e_sector = find_exploit_sector(t);
     //mf_enhanced_auth(e_sector, 0, t, r, &d, pk, 'd'); // AUTH + Get Distances mode
-
-    // Recover key from encrypted sectors, j is a sector counter
-    for (m = 0; m < 2; ++m) {
-        if (e_sector == -1) break; // All keys are default, I am skipping recovery mode
-        for (j = 0; j < (t.num_sectors); ++j) {
-            memcpy(mp.mpa.abtAuthUid, t.nt.nti.nai.abtUid + t.nt.nti.nai.szUidLen - 4, sizeof(mp.mpa.abtAuthUid));
-            if ((dumpKeysA && !t.sectors[j].foundKeyA) || (!dumpKeysA && !t.sectors[j].foundKeyB)) {
-
-                // First, try already broken keys
-                skip = false;
-                for (uint32_t o = 0; o < bk->size; o++) {
-                    num_to_bytes(bk->brokenKeys[o], 6, mp.mpa.abtKey);
-                    mc = dumpKeysA ? MC_AUTH_A : MC_AUTH_B;
-                    int res;
-                    if ((res = nfc_initiator_mifare_cmd(r.pdi, mc, t.sectors[j].trailer, &mp)) < 0) {
-                        if (res != NFC_EMFCAUTHFAIL) {
-                            nfc_perror(r.pdi, "nfc_initiator_mifare_cmd");
-                            goto error;
-                        }
-                        mf_anticollision(t, r);
-                    }
-                    else {
-                        // Save all information about successfull authentization
-                        printf("Sector: %d, type %c\n", j, (dumpKeysA ? 'A' : 'B'));
-                        if (dumpKeysA) {
-                            memcpy(t.sectors[j].KeyA, mp.mpa.abtKey, sizeof(mp.mpa.abtKey));
-                            t.sectors[j].foundKeyA = true;
-                            // if we need KeyB for this sector it should be revealed by a data read with KeyA
-                            if (!t.sectors[j].foundKeyB) {
-                                if ((res = nfc_initiator_mifare_cmd(r.pdi, MC_READ, t.sectors[j].trailer, &mtmp)) >= 0) {
-                                    fprintf(stdout, "  Data read with Key A revealed Key B: [%012llx] - checking Auth: ", bytes_to_num(mtmp.mpd.abtData + 10, sizeof(mtmp.mpa.abtKey)));
-                                    memcpy(mtmp.mpa.abtKey, mtmp.mpd.abtData + 10, sizeof(mtmp.mpa.abtKey));
-                                    memcpy(mtmp.mpa.abtAuthUid, t.nt.nti.nai.abtUid + t.nt.nti.nai.szUidLen - 4, sizeof(mtmp.mpa.abtAuthUid));
-                                    if ((res = nfc_initiator_mifare_cmd(r.pdi, MC_AUTH_B, t.sectors[j].trailer, &mtmp)) < 0) {
-                                        fprintf(stdout, "Failed!\n");
-                                        mf_configure(r.pdi);
-                                        mf_anticollision(t, r);
-                                    }
-                                    else {
-                                        fprintf(stdout, "OK\n");
-                                        memcpy(t.sectors[j].KeyB, mtmp.mpd.abtData + 10, sizeof(t.sectors[j].KeyB));
-                                        t.sectors[j].foundKeyB = true;
-                                        bk->size++;
-                                        bk->brokenKeys = (uint64_t*)realloc((void*)bk->brokenKeys, bk->size * sizeof(uint64_t));
-                                        bk->brokenKeys[bk->size - 1] = bytes_to_num(mtmp.mpa.abtKey, sizeof(mtmp.mpa.abtKey));
-                                    }
-                                }
-                                else {
-                                    if (res != NFC_ERFTRANS) {
-                                        nfc_perror(r.pdi, "nfc_initiator_mifare_cmd");
-                                        goto error;
-                                    }
-                                    mf_anticollision(t, r);
-                                }
-                            }
-                        }
-                        else {
-                            memcpy(t.sectors[j].KeyB, mp.mpa.abtKey, sizeof(mp.mpa.abtKey));
-                            t.sectors[j].foundKeyB = true;
-                        }
-                        fprintf(stdout, "  Found Key: %c [%012llx]\n", (dumpKeysA ? 'A' : 'B'),
-                            bytes_to_num(mp.mpa.abtKey, 6));
-                        mf_configure(r.pdi);
-                        mf_anticollision(t, r);
-                        skip = true;
-                        break;
-                    }
-                }
-                if (skip) continue; // We have already revealed key, go to the next iteration
-
-                // Max probes for auth for each sector
-                for (k = 0; k < probes; ++k) {
-                    // Try to authenticate to exploit sector and determine distances (filling denonce.distances)
-                    int authresult = mf_enhanced_auth(e_sector, 0, t, r, &d, pk, 'd', dumpKeysA); // AUTH + Get Distances mode
-                    if (authresult == -99999) {
-                        //for now we return the last sector that is unknown
-                        nfc_close(r.pdi);
-                        nfc_exit(context);
-                        if (pfKey) {
-                            fprintf(pfKey, "%012llx;%d;%c;%d;%c", knownKey, knownSector, knownKeyLetter, unknownSector, unknownKeyLetter);
-                            fclose(pfKey);
-                        }
-                        return 9;
-                    }
-
-                    printf("Sector: %d, type %c, probe %d, distance %d ", j, (dumpKeysA ? 'A' : 'B'), k, d.median);
-                    // Configure device to the previous state
-                    mf_configure(r.pdi);
-                    mf_anticollision(t, r);
-
-                    pk->possibleKeys = NULL;
-                    pk->size = 0;
-                    // We have 'sets' * 32b keystream of potential keys
-                    for (n = 0; n < sets; n++) {
-                        // AUTH + Recovery key mode (for a_sector), repeat 5 times
-                        mf_enhanced_auth(e_sector, t.sectors[j].trailer, t, r, &d, pk, 'r', dumpKeysA);
-                        mf_configure(r.pdi);
-                        mf_anticollision(t, r);
-                        fprintf(stdout, ".");
-                        fflush(stdout);
-                    }
-                    fprintf(stdout, "\n");
-                    // Get first 15 grouped keys
-                    ck = uniqsort(pk->possibleKeys, pk->size);
-                    for (i = 0; i < TRY_KEYS; i++) {
-                        // We don't known this key, try to break it
-                        // This key can be found here two or more times
-                        if (ck[i].count > 0) {
-                            // fprintf(stdout,"%d %llx\n",ck[i].count, ck[i].key);
-                            // Set required authetication method
-                            num_to_bytes(ck[i].key, 6, mp.mpa.abtKey);
-                            mc = dumpKeysA ? MC_AUTH_A : MC_AUTH_B;
-                            int res;
-                            if ((res = nfc_initiator_mifare_cmd(r.pdi, mc, t.sectors[j].trailer, &mp)) < 0) {
-                                if (res != NFC_EMFCAUTHFAIL) {
-                                    nfc_perror(r.pdi, "nfc_initiator_mifare_cmd");
-                                    goto error;
-                                }
-                                mf_anticollision(t, r);
-                            }
-                            else {
-                                // Save all information about successfull authentization
-                                bk->size++;
-                                bk->brokenKeys = (uint64_t*)realloc((void*)bk->brokenKeys, bk->size * sizeof(uint64_t));
-                                bk->brokenKeys[bk->size - 1] = bytes_to_num(mp.mpa.abtKey, sizeof(mp.mpa.abtKey));
-                                if (dumpKeysA) {
-                                    memcpy(t.sectors[j].KeyA, mp.mpa.abtKey, sizeof(mp.mpa.abtKey));
-                                    t.sectors[j].foundKeyA = true;
-
-                                }
-                                else {
-                                    memcpy(t.sectors[j].KeyB, mp.mpa.abtKey, sizeof(mp.mpa.abtKey));
-                                    t.sectors[j].foundKeyB = true;
-                                }
-                                fprintf(stdout, "  Found Key: %c [%012llx]\n", (dumpKeysA ? 'A' : 'B'),
-                                    bytes_to_num(mp.mpa.abtKey, 6));
-                                // if we need KeyB for this sector, it should be revealed by a data read with KeyA
-                                if (!t.sectors[j].foundKeyB) {
-                                    if ((res = nfc_initiator_mifare_cmd(r.pdi, MC_READ, t.sectors[j].trailer, &mtmp)) >= 0) {
-                                        fprintf(stdout, "  Data read with Key A revealed Key B: [%012llx] - checking Auth: ", bytes_to_num(mtmp.mpd.abtData + 10, sizeof(mtmp.mpa.abtKey)));
-                                        memcpy(mtmp.mpa.abtKey, mtmp.mpd.abtData + 10, sizeof(mtmp.mpa.abtKey));
-                                        memcpy(mtmp.mpa.abtAuthUid, t.nt.nti.nai.abtUid + t.nt.nti.nai.szUidLen - 4, sizeof(mtmp.mpa.abtAuthUid));
-                                        if ((res = nfc_initiator_mifare_cmd(r.pdi, MC_AUTH_B, t.sectors[j].trailer, &mtmp)) < 0) {
-                                            fprintf(stdout, "Failed!\n");
-                                            mf_configure(r.pdi);
-                                            mf_anticollision(t, r);
-                                        }
-                                        else {
-                                            fprintf(stdout, "OK\n");
-                                            memcpy(t.sectors[j].KeyB, mtmp.mpd.abtData + 10, sizeof(t.sectors[j].KeyB));
-                                            t.sectors[j].foundKeyB = true;
-                                            bk->size++;
-                                            bk->brokenKeys = (uint64_t*)realloc((void*)bk->brokenKeys, bk->size * sizeof(uint64_t));
-                                            bk->brokenKeys[bk->size - 1] = bytes_to_num(mtmp.mpa.abtKey, sizeof(mtmp.mpa.abtKey));
-                                        }
-                                    }
-                                    else {
-                                        if (res != NFC_ERFTRANS) {
-                                            nfc_perror(r.pdi, "nfc_initiator_mifare_cmd");
-                                            goto error;
-                                        }
-                                        mf_anticollision(t, r);
-                                    }
-                                }
-                                mf_configure(r.pdi);
-                                mf_anticollision(t, r);
-                                break;
-                            }
-                        }
-                    }
-                    free(pk->possibleKeys);
-                    free(ck);
-                    // Success, try the next sector
-                    if ((dumpKeysA && t.sectors[j].foundKeyA) || (!dumpKeysA && t.sectors[j].foundKeyB)) break;
-                }
-                // We haven't found any key, exiting
-                if ((dumpKeysA && !t.sectors[j].foundKeyA) || (!dumpKeysA && !t.sectors[j].foundKeyB)) {
-                    ERR("No success, maybe you should increase the probes");
-                    goto error;
-                }
-            }
-        }
-        dumpKeysA = false;
-    }
-
-
-    for (i = 0; i < (t.num_sectors); ++i) {
-        if ((dumpKeysA && !t.sectors[i].foundKeyA) || (!dumpKeysA && !t.sectors[i].foundKeyB)) {
-            fprintf(stdout, "\nTry again, there are still some encrypted blocks\n");
-            succeed = 0;
-            break;
-        }
-    }
-#endif
-
+    if (e_sector == -2) succeed = false;
 
     if (succeed) {
         i = t.num_sectors; // Sector counter
@@ -761,14 +900,14 @@ int nfc_mfclassic_read(CmdLineW & cl) {
             if ((res = nfc_initiator_mifare_cmd(r.pdi, MC_AUTH_A, block, &mp)) < 0) {
                 if (res != NFC_EMFCAUTHFAIL) {
                     nfc_perror(r.pdi, "nfc_initiator_mifare_cmd");
-                    goto error;
+                    myHandleError();
                 }
                 mf_configure(r.pdi);
                 mf_anticollision(t, r);
             }
             else { // and Read
                 if ((res = nfc_initiator_mifare_cmd(r.pdi, MC_READ, block, &mp)) >= 0) {
-                    fprintf(stdout, "Block %02d, type %c, key %012llx :", block, 'A', bytes_to_num(t.sectors[i].KeyA, 6));
+                    fprintf(stdout, "Block %02d, type %c, key %012llx :\n", block, 'A', bytes_to_num(t.sectors[i].KeyA, 6));
                     //print_hex(mp.mpd.abtData, 16);
                     mf_configure(r.pdi);
                     mf_select_tag(r.pdi, &(t.nt));
@@ -778,7 +917,7 @@ int nfc_mfclassic_read(CmdLineW & cl) {
                     // Error, now try read() with B key
                     if (res != NFC_ERFTRANS) {
                         nfc_perror(r.pdi, "nfc_initiator_mifare_cmd");
-                        goto error;
+                        myHandleError();
                     }
                     mf_configure(r.pdi);
                     mf_anticollision(t, r);
@@ -786,14 +925,14 @@ int nfc_mfclassic_read(CmdLineW & cl) {
                     if ((res = nfc_initiator_mifare_cmd(r.pdi, MC_AUTH_B, block, &mp)) < 0) {
                         if (res != NFC_EMFCAUTHFAIL) {
                             nfc_perror(r.pdi, "nfc_initiator_mifare_cmd");
-                            goto error;
+                            myHandleError();
                         }
                         mf_configure(r.pdi);
                         mf_anticollision(t, r);
                     }
                     else { // and Read
                         if ((res = nfc_initiator_mifare_cmd(r.pdi, MC_READ, block, &mp)) >= 0) {
-                            fprintf(stdout, "Block %02d, type %c, key %012llx :", block, 'B', bytes_to_num(t.sectors[i].KeyB, 6));
+                            fprintf(stdout, "Block %02d, type %c, key %012llx \n", block, 'B', bytes_to_num(t.sectors[i].KeyB, 6));
                             //print_hex(mp.mpd.abtData, 16);
                             mf_configure(r.pdi);
                             mf_select_tag(r.pdi, &(t.nt));
@@ -802,7 +941,7 @@ int nfc_mfclassic_read(CmdLineW & cl) {
                         else {
                             if (res != NFC_ERFTRANS) {
                                 nfc_perror(r.pdi, "nfc_initiator_mifare_cmd");
-                                goto error;
+                                myHandleError();
                             }
                             mf_configure(r.pdi);
                             mf_anticollision(t, r);
@@ -826,7 +965,7 @@ int nfc_mfclassic_read(CmdLineW & cl) {
         if (fwrite(&mtDump, 1, dump_size, pfDump) != dump_size) {
             fprintf(stdout, "Error, cannot write dump\n");
             fclose(pfDump);
-            goto error;
+            myHandleError();
         }
         fclose(pfDump);
     }
@@ -841,12 +980,10 @@ int nfc_mfclassic_read(CmdLineW & cl) {
     // Disconnect device and exit
     nfc_close(r.pdi);
     nfc_exit(context);
-    exit(EXIT_SUCCESS);
-error:
-    nfc_close(r.pdi);
-    nfc_exit(context);
-    exit(EXIT_FAILURE);
+    return(succeed ? EXIT_SUCCESS : 1);
 }
+
+extern "C" {
 
 static void mf_init(mfreader *r)
 {
@@ -929,12 +1066,12 @@ static int find_exploit_sector(mftag t)
     }
     for (i = 0; i < t.num_sectors; i++) {
         if ((t.sectors[i].foundKeyA) || (t.sectors[i].foundKeyB)) {
-            fprintf(stdout, "\n\nUsing sector %02d as an exploit sector\n", i);
+            fprintf(stdout, "\n\nNot using sector %02d as an exploit sector. If you want to do this, please turn to mfoc\n", i);
             return i;
         }
     }
     ERR("\n\nNo sector encrypted with the default key has been found, exiting..");
-    exit(EXIT_FAILURE);
+    return -2;
 }
 
 static void mf_anticollision(mftag t, mfreader r)
@@ -1227,12 +1364,11 @@ static int mf_enhanced_auth(int e_sector, int a_sector, mftag t, mfreader r, den
                         pk->size += MEM_CHUNK;
                         // fprintf(stdout, "New chunk by %d, sizeof %lu\n", kcount, pk->size * sizeof(uint64_t));
                         auto ptr = (uint64_t*)realloc((void*)pk->possibleKeys, pk->size * sizeof(uint64_t));
-                        if (!ptr) throw std::exception("out of memory");
-                        pk->possibleKeys = ptr;
-                        if (pk->possibleKeys == NULL) {
+                        if (!ptr) {
                             ERR("Memory allocation error for pk->possibleKeys");
                             exit(EXIT_FAILURE);
                         }
+                        pk->possibleKeys = ptr;
                     }
                     pk->possibleKeys[kcount] = lfsr;
                     kcount++;
@@ -1341,3 +1477,6 @@ static long long unsigned int bytes_to_num(uint8_t* src, uint32_t len)
     }
     return num;
 }
+
+}
+

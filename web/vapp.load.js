@@ -58,9 +58,12 @@ function StartWebConversation() {
             }, 1000);
         }
         (async () => {
-            if (!await (await fetch('/api/v4.8/nfc/defaultdevice')).text()) try {
+            const resp = await fetch('/api/v4.8/nfc/defaultdevice');
+            if (!await (resp).text()) try {
                 if (location.hash.startsWith('#/settings/')) throw 1;
-                await (ElMessageBox.confirm('未设置默认设备，是否前往设置？', '温馨提示', {
+                await (ElMessageBox.confirm(resp.headers.get('x-device-not-recognized') === 'true' ?
+                    '默认设备无法连接（一般是因为更换了USB插口等原因），是否前往更新？' : '未设置默认设备，是否前往设置？',
+                    '温馨提示', {
                     type: 'warning',
                     confirmButtonText: '立即前往 (建议)',
                     cancelButtonText: '不前往 (不建议)',
@@ -68,6 +71,9 @@ function StartWebConversation() {
                 location.hash = '#/settings/#device';
             } catch { }
         })();
+        if ((await userconfig.get('noguide')) !== 'true') {
+            globalThis.appInstance_.instance.showGuide = true;
+        }
     };
     ws.onmessage = function (event) {
         // console.log(event.data);

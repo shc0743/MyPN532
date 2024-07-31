@@ -59,7 +59,7 @@ DWORD Echo(std::wstring str) {
 }
 
 
-int nfc_scan_device();
+int nfc_scan_device(bool = true);
 int nfc_query_card_info();
 int nfc_mful(CmdLineW&);
 int nfc_mfclassic(CmdLineW&);
@@ -93,9 +93,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	
 
-	if (type == L"scan-device") {
-		return nfc_scan_device();
-	}
 	if (type == L"query-card-info") {
 		return nfc_query_card_info();
 	}
@@ -107,6 +104,12 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	if (type == L"mful") {
 		return nfc_mful(cl);
+	}
+	if (type == L"scan-device") {
+		return nfc_scan_device(true);
+	}
+	if (type == L"test-device") {
+		return nfc_scan_device(false);
 	}
 
 	if (type == L"test-app") {

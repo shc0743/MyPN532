@@ -10,15 +10,17 @@ static nfc_device* pnd;
 DWORD Echo(PVOID buffer, DWORD count);
 DWORD Echo(std::wstring str);
 
-int nfc_scan_device() {
+int nfc_scan_device(bool deep) {
     const char* acLibnfcVersion;
     size_t  i;
     bool verbose = false;
 
     nfc_context* context;
 
-    (void)_putenv("LIBNFC_INTRUSIVE_SCAN=1");
-    SetCurrentDirectoryW(L"./bin/self");
+    if (deep) {
+        (void)_putenv("LIBNFC_INTRUSIVE_SCAN=1");
+        SetCurrentDirectoryW(L"./bin/self");
+    }
 
     nfc_init(&context);
     if (context == NULL) {
@@ -37,6 +39,7 @@ int nfc_scan_device() {
         nfc_exit(context);
         exit(EXIT_FAILURE);
     }
+    int code = 0;
 
     printf("%d NFC device(s) found:\n", (int)szDeviceFound);
     char* strinfo = NULL;
@@ -59,9 +62,11 @@ int nfc_scan_device() {
         }
         else {
             printf("nfc_open failed for %s\n", connstrings[i]);
+            code = 1;
         }
     }
     nfc_exit(context);
+    return code;
     exit(EXIT_SUCCESS);
 }
 

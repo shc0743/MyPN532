@@ -69,6 +69,9 @@
 #define NTAG_215  2
 #define NTAG_216  3
 
+
+extern "C" {
+
 static nfc_device* pnd;
 static nfc_target nt;
 static mifare_param mp;
@@ -545,6 +548,7 @@ static size_t str_to_uid(const char* str, uint8_t* uid)
 	}
 	return i >> 1;
 }
+}
 
 
 int nfc_mful(CmdLineW& cl)
@@ -801,7 +805,10 @@ int nfc_mful(CmdLineW& cl)
 			printf("Warning! Read failed - partial data written to file!\n");
 	}
 	else if (iAction == 2) {
-		write_card(bOTP, bLock, bDynLock, bUID);
+		int code = write_card(bOTP, bLock, bDynLock, bUID) ? 0 : 1;
+		nfc_close(pnd);
+		nfc_exit(context);
+		return code;
 	}
 	else if (iAction == 3) {
 		if (!check_magic()) {
