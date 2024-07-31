@@ -210,7 +210,7 @@ class MySectorEditor extends HTMLElement {
                 }
 
                 if (data === '0'.repeat(32)) {
-                    this.#errorMessage.innerHTML = '可能未发现密钥(或死扇区)';
+                    this.#errorMessage.innerHTML = '可能未发现密钥(或死扇区)(或已跳过)';
                 }
             }
             else {

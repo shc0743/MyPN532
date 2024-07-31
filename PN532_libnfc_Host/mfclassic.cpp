@@ -165,7 +165,7 @@ authenticate(uint32_t uiBlock)
 
 		// If formatting or not using key file, try to guess the right key
 	}
-#if 0
+#if 1
 	else 
 #endif
 #endif
@@ -303,6 +303,7 @@ read_card(bool read_unlocked)
 				// When a failure occured we need to redo the anti-collision
 				if (nfc_initiator_select_passive_target(pnd, nmMifare, NULL, 0, &nt) <= 0) {
 					printf("!\nError: tag was removed\n");
+					nfc_perror(pnd, "nfc_initiator_select_passive_target");
 					return false;
 				}
 				bFailure = false;
@@ -327,7 +328,8 @@ read_card(bool read_unlocked)
 					 memcpy(mtDump.amb[iBlock].mbt.abtKeyB, mtKeys.amb[iBlock].mbt.abtKeyB, sizeof(mtDump.amb[iBlock].mbt.abtKeyB));
 					}
 			} else {
-				printf("!\nfailed to read trailer block %i #0x%%02x\n", iBlock);
+				printf("!\nfailed to read trailer block %i\n", iBlock);
+				nfc_perror(pnd, "nfc_initiator_mifare_cmd");
 				bFailure = true;
 			}
 		} else {

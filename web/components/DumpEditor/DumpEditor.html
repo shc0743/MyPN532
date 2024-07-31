@@ -21,12 +21,13 @@
                     <div style="display: flex; flex-direction: column; white-space: nowrap;">
                         <a href="#/" @click.prevent="launchTool('bcc')">BCC工具</a>
                         <a href="#/" @click.prevent="launchTool('writethis')">将此转储写入其他标签</a>
+                        <a href="#/" @click.prevent="launchTool('exportkeys')">导出转储文件中的密钥</a>
                     </div>
                 </ElPopover>
             </div>
         </div>
         <DumpSectorEditor v-if="!isMonacoMode" :data="editdata" :uppercase="showUppercase" :enableM1CFunc="enableM1CFunc" ref="myEditor"></DumpSectorEditor>
-        <monaco-editor v-else v-deep :data="editdata" ref="monaco"></monaco-editor>
+        <monaco-editor v-else v-deep :data="editdata" :options="Ultralight_monaco_options" ref="monaco"></monaco-editor>
         <div class="editorControls" v-deep>
             <ElButton type="primary" plain style="flex: 1;" @click="savefile(true)" :disabled="editorType === 'asc'">保存</ElButton>
             <ElButton type="danger" plain style="flex: 1;" @click="savefile(false)">放弃</ElButton>

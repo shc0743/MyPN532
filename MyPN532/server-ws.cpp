@@ -24,6 +24,7 @@ public:
 	HANDLE hPipe_outbound_keyfile;
 	bool use_mfoc;
 	bool unlock;
+	wstring sectorsStr;
 	wstring internalDataProvider;
 };
 
@@ -133,25 +134,47 @@ static void wsProcessMessage(const WebSocketConnectionPtr& wsConnPtr, std::strin
 			bool use_mfoc = json["use_mfoc"].asBool();
 			bool unlock = json.isMember("unlock") ?
 				(json["unlock"].isBool() ? json["unlock"].asBool() : false) : false;
+			wstring sectors;
+			if (json.isMember("sector_range") && json["sector_range"].isArray()) {
+				auto& start = json["sector_range"][0];
+				auto& end = json["sector_range"][1];
+				if (!(start.isIntegral() && end.isIntegral())) {
+					//val["code"] = 400;
+					//val["error"] = ccs8("范围不明确");
+					//val["type"] = "action-ended";
+					//wsSessionSessionEnd(sessionId);
+					//Json::FastWriter fastWriter;
+					//wsConnPtr->send(fastWriter.write(val));
+					//return;
+				}
+				else {
+					size_t s = start.asLargestUInt();
+					size_t e = end.asLargestUInt();
+					for (size_t v = s; v <= e; ++v) sectors += to_wstring(v) + L",";
+					if (!sectors.empty()) sectors.erase(sectors.end() - 1);
+				}
+			}
 			
 			if (sz_keyfiles.empty() && !use_mfoc && !unlock) {
-				val["code"] = 400;
-				val["error"] = ccs8("需要指定keyfile");
-				wsSessionSessionEnd(sessionId);
 			}
 			else if (wsSessionIdData.contains(sessionId)) {
 				val["code"] = 400;
 				val["error"] = ccs8("正在进行其他操作");
+				val["type"] = "action-ended";
+				wsSessionSessionEnd(sessionId);
 			}
 			else if (!wsSessionIdPtr.contains(sessionId)) {
 				val["code"] = 404;
 				val["error"] = ccs8("No such session id");
+				val["type"] = "action-ended";
+				wsSessionSessionEnd(sessionId);
 			}
 			else {
 				wsNativeNfcApiData ad;
 				if (!sz_keyfiles.empty()) str_split(sz_keyfiles, L"|", ad.keyfiles);
 				ad.use_mfoc = use_mfoc;
 				ad.unlock = unlock;
+				ad.sectorsStr = sectors;
 				wsSessionIdData.insert(std::make_pair(sessionId, ad));
 
 				val["code"] = 0;
@@ -698,6 +721,7 @@ DWORD __stdcall wsNativeReadNfcMfClassic(PVOID pConnInfo) {
 			}
 			else {
 				cmd += L"-read -O\"" + pipe + L"\" -f\"" + pipeKeyFile + L"\" ";
+				if (!data->sectorsStr.empty()) cmd += L" --sectors=" + data->sectorsStr;
 			}
 			GetProcessStdOutputWithExitCodeEnhanced(cmd,
 				&dwCode, std, true, rlcbw, (PVOID)sessionId);

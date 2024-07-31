@@ -10,22 +10,33 @@ import { hexStringToArrayBuffer, formatHex } from './util.js';
 
 const componentId = '3a16fde5-cf40-4605-b0f2-6202bc21010e';
 
+const Ultralight_monaco_options = {
+    minimap: { enabled: false },
+    lineNumbers: 'custom',
+    lineNumbersProvider: function (model) {
+        const originalLineNumbers = model.getLineNumbers();
+        return {
+            getLineHeight: function (lineNumber) {
+                return originalLineNumbers.getLineHeight(lineNumber);
+            },
+            getLineNumber: function (n) {
+                return `Block ${(n - 1) * 4}-${(n - 1) * 4 + 3}`;
+            }
+        };
+    }
+};
+
 const data = {
     data() {
         return {
             file: null,
             isAutoDump: false,
-            // isCompare: false,
-            // compareData: {
-            //     fileA: null, fileB: null,
-            //     originalModel: null,
-            //     modifiedModel: null,
-            // },
             editdata: null,
             editorType: 'hex',
             showUppercase: false,
             allowParticipateBlocks: false,
             isMonacoMode: false,
+            Ultralight_monaco_options,
 
         }
     },
@@ -36,8 +47,11 @@ const data = {
     },
 
     computed: {
+        isUltraLight() {
+            return (/ultralight/i.test(this.file));
+        },
         enableM1CFunc() {
-            return false === (/ultralight/i.test(this.file));
+            return false === this.isUltraLight;
         },
     },
 
@@ -121,23 +135,48 @@ const data = {
                 // });
                 this.editdata = blob;
 
+                if (this.isUltraLight) {
+                    this.isMonacoMode = true;
+                    await new Promise((resolve) => {
+                        this.$nextTick(() => this.$nextTick(resolve));
+                    }); // wait for the update
+                }
+
                 if (this.isMonacoMode) {
                     const arrayBuffer = await this.editdata.arrayBuffer();
                     const uint8Array = new Uint8Array(arrayBuffer);
                     let final = [];
                     let hexString = '', buffer = [];
-                    for (let i = 0, l = uint8Array.length; i < l; i++) {
-                        if (this.editorType === 'hex')
-                            hexString += uint8Array[i].toString(16).padStart(2, '0');
-                        if (this.editorType === 'asc')
-                            hexString += String.fromCharCode(uint8Array[i]);
+                    if (this.isUltraLight) {
+                        for (let i = 0, l = uint8Array.length; i < l; i++) {
+                            if (this.editorType === 'hex')
+                                hexString += uint8Array[i].toString(16).padStart(2, '0');
+                            if (this.editorType === 'asc')
+                                hexString += String.fromCharCode(uint8Array[i]);
                     
-                        if ((i + 1) % 16 === 0 || (i + 1 === l)) {
-                            buffer.push(hexString);
-                            hexString = '';
-                            if ((i + 1) % 64 === 0 || (i + 1 === l)) {
-                                final.push('# 扇区 ' + (((i + 1) / 64) - 1) + '\n' + (buffer.join('\n')));
-                                buffer.length = 0;
+                            if ((i + 1) % 4 === 0 || (i + 1 === l)) {
+                                buffer.push(hexString + '');
+                                hexString = '';
+                                if ((i + 1) % 16 === 0 || (i + 1 === l)) {
+                                    final.push((buffer.join(this.editorType === 'hex' ? ' ' : '')));
+                                    buffer.length = 0;
+                                }
+                            }
+                        }
+                    } else {
+                        for (let i = 0, l = uint8Array.length; i < l; i++) {
+                            if (this.editorType === 'hex')
+                                hexString += uint8Array[i].toString(16).padStart(2, '0');
+                            if (this.editorType === 'asc')
+                                hexString += String.fromCharCode(uint8Array[i]);
+                    
+                            if ((i + 1) % 16 === 0 || (i + 1 === l)) {
+                                buffer.push(hexString);
+                                hexString = '';
+                                if ((i + 1) % 64 === 0 || (i + 1 === l)) {
+                                    final.push('# 扇区 ' + (Math.ceil((i + 1) / 64) - 1) + '\n' + (buffer.join('\n')));
+                                    buffer.length = 0;
+                                }
                             }
                         }
                     }

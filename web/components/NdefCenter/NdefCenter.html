@@ -5,18 +5,18 @@
 
         <div class="tabContainer" v-deep>
             <div v-if="currentTab === 'read'">
-                <div v-deep class="input-area"><ElButton style="flex: 1;" type="primary" plain @click>开始读取</ElButton></div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" type="primary" plain @click="nop">开始读取</ElButton></div>
             </div>
 
             <div v-if="currentTab === 'write'">
-                <div v-deep class="input-area"><ElButton style="flex: 1;" type="primary" plain @click>开始写入</ElButton></div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" type="primary" plain @click="nop">开始写入</ElButton></div>
             </div>
 
             <div v-if="currentTab === 'more'">
-                <div v-deep class="input-area"><ElButton style="flex: 1;" @click>清除标签</ElButton></div>
-                <div v-deep class="input-area"><ElButton style="flex: 1;" @click>格式化标签</ElButton></div>
-                <div v-deep class="input-area"><ElButton style="flex: 1;" @click>设置密码</ElButton></div>
-                <div v-deep class="input-area"><ElButton style="flex: 1;" @click>删除密码</ElButton></div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" @click="nop">清除标签</ElButton></div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" @click="nop">格式化标签</ElButton></div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" @click="nop">设置密码</ElButton></div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" @click="nop">删除密码</ElButton></div>
             </div>
 
         </div>

@@ -45,6 +45,7 @@
 #include "mfoc-codes/slre.h"
 #include "mfoc-codes/crapto1.h"
 #include "../../resource/tool.h"
+#include <set>
 using namespace std;
 
 #pragma region mifare.h
@@ -524,6 +525,20 @@ int nfc_mfclassic_read(CmdLineW & cl) {
     struct MyKey { uint8_t value[6]; };
     vector<MyKey> user_keys;
 
+    bool useDumpSectors = false;
+    set<size_t> dumpSectors;
+    wstring szDumpSectors;
+    cl.getopt(L"sectors", szDumpSectors);
+    if (!szDumpSectors.empty()) {
+        vector<wstring> temp;
+        str_split(szDumpSectors, L",", temp);
+        for (auto& i : temp) dumpSectors.insert((size_t)atoll(ws2c(i)));
+        if (dumpSectors.empty()) {
+            ERR("Invalid sector configuration\n");
+            return 87;
+        }
+        useDumpSectors = true;
+    }
 
     mftag        t;
     mfreader    r;
@@ -726,7 +741,7 @@ int nfc_mfclassic_read(CmdLineW & cl) {
     //print_nfc_target(&t.nt, true);
 
     fprintf(stdout, "\nTry to authenticate to all sectors with default keys...\n");
-    fprintf(stdout, "Symbols: '.' no key found, '/' A key found, '\\' B key found, 'x' both keys found\n");
+    fprintf(stdout, "Symbols: '.' no key found, '/' A key found, '\\' B key found, 'x' both keys found, '-' skipped\n");
     // Set the authentication information (uid)
     memcpy(mp.mpa.abtAuthUid, t.nt.nti.nai.abtUid + t.nt.nti.nai.szUidLen - 4, sizeof(mp.mpa.abtAuthUid));
     // Iterate over all keys (n = number of keys)
@@ -766,6 +781,16 @@ int nfc_mfclassic_read(CmdLineW & cl) {
         // Iterate over every block, where we haven't found a key yet
         for (block = 0; block <= t.num_blocks; ++block) {
             if (trailer_block(block)) {
+                if (useDumpSectors) {
+                    size_t sector = block / 4;
+                    if (!dumpSectors.contains(sector)) {
+                        fprintf(stdout, "-");
+                        // Save position of a trailer block to sector struct
+                        t.sectors[i].trailer = block;
+                        t.sectors[i++].trailer = block;
+                        continue;
+                    }
+                }
                 if (!t.sectors[i].foundKeyA) {
                     mc = MC_AUTH_A;
                     int res;

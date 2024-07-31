@@ -132,7 +132,7 @@ const data = {
                         keyfiles: this.userkeyfile.sort().join('|'),
                         use_mfoc: this.use_mfoc,
                         unlock: this.unlockuid,
-                        sector_range: this.sectorAll ? [] : [this.sectorStart, this.sectorEnd],
+                        sector_range: this.sectorAll ? [] : [+this.sectorStart, +this.sectorEnd],
                     });
                     this.read_percent = 2;
                 });

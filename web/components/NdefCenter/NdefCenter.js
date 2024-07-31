@@ -22,7 +22,8 @@ const data = {
     },
 
     methods: {
-
+        nop() { },
+        
     },
 
     template: await getHTML(import.meta.url, componentId),

@@ -25,6 +25,7 @@ const data = {
             writeSectorCount: 16,
             sectorSelectFunc: null,
             write_percent: 0,
+            show_advanced: false,
         }
     },
 
