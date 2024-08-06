@@ -54,6 +54,9 @@
     <ClCompile Include="mfoc-codes\slre.c">
       <Filter>mfoc-codes</Filter>
     </ClCompile>
+    <ClCompile Include="better-mfoc.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\resource\tool.h">

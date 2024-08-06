@@ -1,5 +1,5 @@
 /*
-main JavaScript file for Web-File-Explorer
+main JavaScript file for MyPN532
 
 */
 

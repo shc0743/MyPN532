@@ -117,6 +117,18 @@ void server::MainServer::ssov2(const HttpRequestPtr& req, std::function<void(con
 
 
 
+void server::MainServer::exitimmediate(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	resp->setStatusCode(k204NoContent);
+	if (req->method() == Options) return callback(resp);
+
+	drogon::app().quit();
+
+	return callback(resp);
+}
+
 void server::MainServer::webconfig(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
 {
 	HttpResponsePtr resp = HttpResponse::newHttpResponse();
@@ -345,32 +357,6 @@ void server::MainServer::dumpfile(const HttpRequestPtr& req, std::function<void(
 	listfile((req), std::move(callback), req->getParameter("autodump") == "true" ? "autodump" : "dumps");
 }
 
-void server::MainServer::deleteautodump(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
-{
-	HttpResponsePtr resp = HttpResponse::newHttpResponse();
-	CORSadd(req, resp);
-	if (req->method() == Options) return callback(resp);
-
-	string_view body_view = req->getBody();
-	string body = req->getParameter("filename");
-	if (body_view.empty() && body.empty()) {
-		resp->setStatusCode(k400BadRequest);
-		resp->setContentTypeCode(CT_TEXT_PLAIN);
-		return callback(resp);
-	}
-	if (body.empty()) body = body_view.data();
-	if (body.find("/") != body.npos || body.find("\\") != body.npos) {
-		HttpResponsePtr resp = HttpResponse::newHttpResponse();
-		CORSadd(req, resp);
-		resp->setContentTypeCode(CT_TEXT_PLAIN);
-		resp->setStatusCode(k403Forbidden);
-		return callback(resp);
-	}
-
-	resp->setStatusCode(DeleteFileW((L"autodump/" + ConvertUTF8ToUTF16(body)).c_str()) ? k204NoContent : k500InternalServerError);
-	return callback(resp);
-}
-
 void server::MainServer::launchcmd(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
 {
 	STARTUPINFO si{}; PROCESS_INFORMATION pi{};
@@ -427,6 +413,38 @@ void server::MainServer::taginfo(const HttpRequestPtr& req, std::function<void(c
 	resp->setContentTypeCode(CT_TEXT_PLAIN);
 	resp->setStatusCode((dwCode == 0) ? k200OK : k418ImATeapot);
 	resp->setBody(ConvertUTF16ToUTF8(text));
+	callback(resp);
+}
+
+void server::MainServer::taginfojson(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	wstring std, pipe; string ansi;
+	DWORD dwCode = -1;
+	{
+		size_t pipeId = ++nfcClientApiPipeId;
+		pipe = L"\\\\.\\pipe\\" + s2ws(app_token) +
+			L".http.cardquery-" + to_wstring(pipeId) + L".basicinfo";
+
+		HANDLE hThread = NULL;
+		if (pipeutil::CreateAndReadPipeAsync(pipe, &ansi, hThread)) {
+			GetProcessStdOutputWithExitCodeEnhanced(L"bin/self/service --type="
+				L"query-card-info --pipe=\"" + pipe + L"\"", &dwCode, std);
+		}
+		else {
+			dwCode = GetLastError();
+		}
+
+		if (hThread) {
+			WaitForSingleObject(hThread, 60000);
+			CloseHandle(hThread);
+		}
+	}
+
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	resp->setStatusCode((dwCode == 0) ? k200OK : k500InternalServerError);
+	resp->setBody(ansi);
 	callback(resp);
 }
 
@@ -719,6 +737,11 @@ void server::MainServer::writeultralight(const HttpRequestPtr& req, std::functio
 			if (opt[3] == L'1') cmd += L"--uid ";
 		}
 	}
+	bool allowResizedWrite = false;
+	if (root.isMember("allowResizedWrite") && root["allowResizedWrite"].isBool()) {
+		allowResizedWrite = root["allowResizedWrite"].asBool();
+		if (allowResizedWrite) cmd += L"--partial ";
+	}
 
 	wstring text;
 	DWORD dwCode = -1;
@@ -728,6 +751,21 @@ void server::MainServer::writeultralight(const HttpRequestPtr& req, std::functio
 	resp->setStatusCode((dwCode == 0) ? k200OK : k500InternalServerError);
 	resp->setBody(ConvertUTF16ToUTF8(text));
 	return callback(resp);
+}
+
+void server::MainServer::lockufuid(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	wstring text;
+	DWORD dwCode = -1;
+	GetProcessStdOutputWithExitCodeEnhanced(L"bin/third/nfc-mfsetuid-from-github-xcicode-mifareonetool -l",
+		&dwCode, text);
+
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	resp->setStatusCode((dwCode == 0) ? k200OK : k500InternalServerError);
+	resp->setBody(ConvertUTF16ToUTF8(text));
+	callback(resp);
 }
 
 

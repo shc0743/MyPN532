@@ -62,11 +62,11 @@ function StartWebConversation() {
             if (!await (resp).text()) try {
                 if (location.hash.startsWith('#/settings/')) throw 1;
                 await (ElMessageBox.confirm(resp.headers.get('x-device-not-recognized') === 'true' ?
-                    '默认设备无法连接（一般是因为更换了USB插口等原因），是否前往更新？' : '未设置默认设备，是否前往设置？',
+                    '默认设备无法连接（一般是因为更换了USB插口等原因，也有可能是其他程序占用），是否前往更新？（注：如果正在运行其他操作，则设备占用是正常现象，可以放心忽略此提示；如果没有插入NFC设备，请先插入设备，然后刷新页面，如此提示依然出现则应前往设置）' : '未设置默认设备，是否前往设置？',
                     '温馨提示', {
                     type: 'warning',
-                    confirmButtonText: '立即前往 (建议)',
-                    cancelButtonText: '不前往 (不建议)',
+                    confirmButtonText: resp.headers.get('x-device-not-recognized') === 'true' ? '前往' : '立即前往 (建议)',
+                    cancelButtonText: resp.headers.get('x-device-not-recognized') === 'true' ? '忽略' : '不前往 (不建议)',
                 }));
                 location.hash = '#/settings/#device';
             } catch { }

@@ -1,0 +1,154 @@
+<div v-deep v-bind="$attrs" class="record-item" tabindex="0" @click="resolveViewPayload" @keyup.self.enter.extra="resolveViewPayload">
+    <div v-if="!recordData">空记录</div>
+    <div v-else-if="recordData.type === 'text'">
+        <div v-deep class="record-type">#{{index + 1}} - 文本</div>
+        <div v-deep class="line-view single-line-view"><b>语言:&nbsp;</b><span v-text="recordData.language"></span></div>
+        <div v-deep class="line-view multiple-line-view text-view" v-text="recordData.content"></div>
+        <div v-deep class="controls-view">
+            <a v-deep class="record-controls" href="#" @click.prevent.stop="copyText(recordData.content)" @keyup.stop>复制</a>
+        </div>
+    </div>
+    <div v-else-if="recordData.type === 'uri'">
+        <div v-deep class="record-type">#{{index + 1}} - URI</div>
+        <div v-deep class="line-view multiple-line-view text-view" v-text="recordData.content"></div>
+        <div v-deep class="line-view multiple-line-view"><b>编码后的 URI:&nbsp;</b><span v-text="recordData.uri"></span></div>
+        <div v-deep class="controls-view">
+            <a v-deep class="record-controls" href="#" @click.prevent.stop="copyText(recordData.content)" @keyup.stop>复制</a>
+            <a v-deep class="record-controls" href="#" @click.prevent.stop="openuri(recordData.uri)" @keyup.stop>打开</a>
+        </div>
+    </div>
+    <div v-else-if="recordData.type === 'android-app'">
+        <div v-deep class="record-type">#{{index + 1}} - Android App</div>
+        <div v-deep class="line-view multiple-line-view" v-text="recordData.pkgName"></div>
+    </div>
+    <div v-else-if="recordData.type === 'tel'">
+        <div v-deep class="record-type">#{{index + 1}} - 电话号码</div>
+        <div v-deep class="line-view multiple-line-view text-view" v-text="recordData.content"></div>
+        <div v-deep class="controls-view">
+            <a v-deep class="record-controls" href="#" @click.prevent.stop="copyText(recordData.content)" @keyup.stop>复制</a>
+            <a v-deep class="record-controls" href="#" @click.prevent.stop="openuri('tel:' + (recordData.content), false)" @keyup.stop>拨打</a>
+        </div>
+    </div>
+    <div v-else-if="recordData.type === 'bluetooth'">
+        <div v-deep class="record-type">#{{index + 1}} - 蓝牙</div>
+        <div v-deep class="line-view multiple-line-view">
+            <span>物理地址:&nbsp;</span>
+            <span v-text="recordData.mac"></span>
+        </div>
+        <div v-deep class="controls-view">
+            <a v-deep class="record-controls" href="#" @click.prevent.stop="copyText(recordData.mac)" @keyup.stop>复制</a>
+        </div>
+    </div>
+    <div v-else-if="recordData.type === 'person'">
+        <div v-deep class="record-type">#{{index + 1}} - 联系人</div>
+        <div v-deep class="line-view single-line-view" @click.stop><ElCheckbox v-model="vCard_showMoreValues">显示更多值</ElCheckbox></div>
+        <ElTable v-deep class="line-view" stripe :border="true" style="width: 100%; box-sizing: border-box;" :data="parsePerson(recordData)">
+            <ElTableColumn prop="0" label="Field" width="100" show-overflow-tooltip />
+            <ElTableColumn prop="1" label="Value 0" :width="vCard_showMoreValues ? '300' : undefined" />
+            <template v-if="vCard_showMoreValues">
+                <ElTableColumn prop="2" label="Value 1" width="200" />
+                <ElTableColumn prop="3" label="Value 2" width="200" />
+                <ElTableColumn prop="4" label="Value 3" width="200" />
+                <ElTableColumn prop="5" label="Value 4" width="200" />
+                <ElTableColumn prop="6" label="Value 5" width="200" />
+                <ElTableColumn prop="7" label="Value 6" width="200" />
+                <ElTableColumn prop="8" label="Value 7" width="200" />
+                <ElTableColumn prop="9" label="Value 8" width="200" />
+                <ElTableColumn prop="10" label="Value 9" width="200" />
+            </template>
+        </ElTable>
+        <div v-deep class="controls-view">
+            <a v-deep class="record-controls" href="#" @click.prevent.stop="copyText(recordData.mac)" @keyup.stop>复制</a>
+        </div>
+    </div>
+    <div v-else>
+        <div v-deep class="record-type">#{{index + 1}} - 未知</div>
+        <div v-deep class="line-view single-line-view">TNF: {{recordData.tnf}}</div>
+        <div v-deep class="line-view single-line-view">记录类型: {{recordData.typestr}}</div>
+        <div v-deep class="line-view single-line-view">解析的类型: {{recordData.type}}</div>
+        <div v-deep class="line-view single-line-view">
+            <span>有效荷载:</span>
+            <a style="margin-left: 1em;" href="#" @click.prevent.stop="viewData(recordData.payload)">查看</a>
+            <a style="margin-left: 1em;" href="#" @click.prevent.stop="viewData(textify(recordData.payload), false)">以文本格式查看</a>
+        </div>
+    </div>
+
+    <div style="margin-top: 0.5em;" class="operate-buttons" v-deep v-if="!isReadOnly" @click.stop>
+        <a href="#" @click.prevent.stop="moveRecord(-1)">上移</a>
+        <a style="margin-left: 1em;" href="#" @click.prevent="moveRecord(1)">下移</a>
+        <ElPopconfirm width="220" @confirm="deleteRecord" title="确认删除？" confirm-button-text="删除" cancel-button-text="不删除">
+            <template #reference>
+                <a style="margin-left: 1em;" href="#" @click.prevent>删除</a>
+            </template>
+        </ElPopconfirm>
+    </div>
+
+    <style>dialog>>>[open] {
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        margin: 0;
+        border-color: #ccc;
+        width: 100%; height: 100%;
+        left: 0; top: 0;
+    }.person-viewer-line>>>{
+        display: flex; align-items: center;
+    }.person-viewer-line[v-deep]>*:nth-last-child(1){
+        margin-left: 0.5em;
+        flex: 1;
+    }.person-viewer-line[v-deep]+.person-viewer-line>>>{
+        margin-top: 0.5em;
+    }</style>
+    <dialog v-if="showDataViewer" ref="dataViewer" v-deep @click.stop @cancel.prevent="viewData(null, false, true)">
+        <div v-if="dataEditorError" style="color: red; margin-bottom: 0.5em;" v-text="dataEditorError"></div>
+        <div style="display: flex; flex-direction: column-reverse; flex: 1; overflow: hidden;">
+            <monaco-editor style="flex: 1; margin: 0.5em 0;" ref="dataEditor"></monaco-editor>
+            <div v-if="recordData.typestr === 'T'" style="display: flex; align-items: center; margin-top: 0.5em;">
+                <span style="margin-right: 0.5em;">语言:</span>
+                <ElInput v-model="extendedData_lang" style="flex: 1;" maxlength="63" show-word-limit />
+            </div>
+            <div style="display: flex; align-items: center;">
+                <b v-if="isHex" style="margin-right: 0.5em;">[十六进制编辑]</b>
+                <span style="margin-right: 0.5em;">类型:</span>
+                <ElInput v-model="dataType" :disabled="dataTypeCannotEdit" style="flex: 1;" />
+            </div>
+        </div>
+        <div style="display: flex;">
+            <ElButton style="flex: 1;" @click="saveData()" type="primary" plain :disabled="isReadOnly">保存</ElButton>
+            <ElButton style="flex: 1;" @click="viewData(null, false, true)" type="danger" plain>关闭</ElButton>
+        </div>
+    </dialog>
+
+    <dialog v-if="showPersonViewer" ref="PersonViewer" v-deep @click.stop @cancel.prevent="viewData(null, false, true)">
+        <div style="display: flex; flex-direction: column; flex: 1; overflow: auto;">
+            <div v-deep class="person-viewer-line">
+                <span>姓名:</span>
+                <ElInput v-model="vCard_EditTemp.name" />
+            </div>
+            <div v-deep class="person-viewer-line">
+                <span>公司:</span>
+                <ElInput v-model="vCard_EditTemp.org" />
+            </div>
+            <div v-deep class="person-viewer-line">
+                <span>地址:</span>
+                <ElInput v-model="vCard_EditTemp.addr" />
+            </div>
+            <div v-deep class="person-viewer-line">
+                <span>电话:</span>
+                <ElInput v-model="vCard_EditTemp.tel" />
+            </div>
+            <div v-deep class="person-viewer-line">
+                <span>电子邮件地址:</span>
+                <ElInput v-model="vCard_EditTemp.email" />
+            </div>
+            <div v-deep class="person-viewer-line">
+                <span>网站:</span>
+                <ElInput v-model="vCard_EditTemp.website" />
+            </div>
+        </div>
+        <div style="display: flex;">
+            <ElButton style="flex: 1;" @click="saveData({ is: 'person-viewer' })" type="primary" plain :disabled="isReadOnly">保存</ElButton>
+            <ElButton style="flex: 1;" @click="viewData(null, false, true, { is: 'person-viewer' })" type="danger" plain>关闭</ElButton>
+        </div>
+    </dialog>
+</div>

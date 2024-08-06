@@ -397,44 +397,6 @@ write_card(bool write_otp, bool write_lock, bool write_dyn_lock, bool write_uid)
 	uint32_t uiSkippedPages = 0;
 	uint32_t uiFailedPages = 0;
 
-	//char    buffer[BUFSIZ]{};
-
-#if 0
-	if (!write_otp) {
-		printf("Write OTP/Capability Bytes ? [yN] ");
-		if (!fgets(buffer, BUFSIZ, stdin)) {
-			ERR("Unable to read standard input.");
-		}
-		write_otp = ((buffer[0] == 'y') || (buffer[0] == 'Y'));
-	}
-
-	// Lock Bytes are OTP if set, so warn
-	if (!write_lock) {
-		printf("Write Lock Bytes (Warning: OTP if set) ? [yN] ");
-		if (!fgets(buffer, BUFSIZ, stdin)) {
-			ERR("Unable to read standard input.");
-		}
-		write_lock = ((buffer[0] == 'y') || (buffer[0] == 'Y'));
-	}
-
-	// NTAG and MF0UL21 have additional lock bytes
-	if (!write_dyn_lock && (iNTAGType != NTAG_NONE || iEV1Type == EV1_UL21)) {
-		printf("Write Dynamic Lock Bytes ? [yN] ");
-		if (!fgets(buffer, BUFSIZ, stdin)) {
-			ERR("Unable to read standard input.");
-		}
-		write_dyn_lock = ((buffer[0] == 'y') || (buffer[0] == 'Y'));
-	}
-
-	if (!write_uid) {
-		printf("Write UID bytes (only for special writeable UID cards) ? [yN] ");
-		if (!fgets(buffer, BUFSIZ, stdin)) {
-			ERR("Unable to read standard input.");
-		}
-		write_uid = ((buffer[0] == 'y') || (buffer[0] == 'Y'));
-	}
-#endif
-
 	/* We may need to skip 2 first pages. */
 	if (!write_uid) {
 		printf("Writing %d pages |", uiBlocks);
@@ -768,8 +730,10 @@ int nfc_mful(CmdLineW& cl)
 			fclose(pfDump);
 			exit(EXIT_FAILURE);
 		}
-		if (szDump != iDumpSize)
+		if (szDump != iDumpSize) {
 			printf("Performing partial write\n");
+			uiBlocks = uint32_t(szDump / 4);
+		}
 		fclose(pfDump);
 		DBG("Successfully opened the dump file\n");
 	}

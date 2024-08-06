@@ -8,7 +8,7 @@
                 </template>
             
                 <ElCheckbox v-model="dumpfileShowAutodump" :disabled="!canContinue">显示自动保存的项</ElCheckbox>
-                <ElCheckbox v-model="dumpfileSelectAll" :disabled="!canContinue">全选</ElCheckbox>
+                <ElCheckbox v-model="dumpfileSelectAll" :disabled="!canContinue">全选 ({{dumpfiles.length}})</ElCheckbox>
                 <ElCheckboxGroup :disabled="dumpfileSelectAll" v-model="dumpfile"
                     style="width: 100%; box-sizing: border-box; display: flex; flex-direction: column;">
                     <ElCheckbox v-for="item in dumpfiles" :label="item" :value="item" :disabled="!canContinue"></ElCheckbox>

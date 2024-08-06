@@ -247,14 +247,21 @@ struct Crypto1State *lfsr_recovery64(uint32_t ks2, uint32_t ks3) {
   struct Crypto1State *statelist, *sl;
   uint8_t oks[32], eks[32], hi[32];
   uint32_t low = 0,  win = 0;
-  uint32_t *tail, table[1 << 16];
+  uint32_t* tail, *table;
   int i, j;
+
+  ZeroMemory(oks, sizeof(oks));
+  ZeroMemory(eks, sizeof(eks));
+  ZeroMemory(hi, sizeof(hi));
+
+  table = (uint32_t*)calloc((size_t)1 << 16, sizeof(uint32_t));
+  if (!table) return 0;
 
   sl = statelist = malloc(sizeof(struct Crypto1State) << 4);
   if (!sl)
     return 0;
   sl->odd = sl->even = 0;
-
+  
   for (i = 30; i >= 0; i -= 2) {
     oks[i >> 1] = BIT(ks2, i ^ 24);
     oks[16 + (i >> 1)] = BIT(ks3, i ^ 24);
@@ -307,6 +314,7 @@ continue2:
       ;
     }
   }
+  free(table);
   return statelist;
 }
 
@@ -365,7 +373,7 @@ int nonce_distance(uint32_t from, uint32_t to)
 {
   uint16_t x, i;
   if (!dist) {
-    dist = malloc(2 << 16);
+    dist = malloc((size_t)(2) << 16);
     if (!dist)
       return -1;
     for (x = i = 1; i; ++i) {
@@ -400,7 +408,7 @@ static uint32_t fastfwd[2][8] = {
  */
 uint32_t *lfsr_prefix_ks(uint8_t ks[8], int isodd)
 {
-  uint32_t c, entry, *candidates = malloc(4 << 21);
+  uint32_t c, entry, *candidates = malloc((size_t)4 << 21);
   int i, size = (1 << 21) - 1;
 
   if (!candidates)

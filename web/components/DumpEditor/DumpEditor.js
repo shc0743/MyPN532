@@ -12,18 +12,9 @@ const componentId = '3a16fde5-cf40-4605-b0f2-6202bc21010e';
 
 const Ultralight_monaco_options = {
     minimap: { enabled: false },
-    lineNumbers: 'custom',
-    lineNumbersProvider: function (model) {
-        const originalLineNumbers = model.getLineNumbers();
-        return {
-            getLineHeight: function (lineNumber) {
-                return originalLineNumbers.getLineHeight(lineNumber);
-            },
-            getLineNumber: function (n) {
-                return `Block ${(n - 1) * 4}-${(n - 1) * 4 + 3}`;
-            }
-        };
-    }
+};
+const My_monaco_options = {
+    minimap: { enabled: false },
 };
 
 const data = {
@@ -36,7 +27,7 @@ const data = {
             showUppercase: false,
             allowParticipateBlocks: false,
             isMonacoMode: false,
-            Ultralight_monaco_options,
+            Ultralight_monaco_options: {},
 
         }
     },
@@ -137,10 +128,24 @@ const data = {
 
                 if (this.isUltraLight) {
                     this.isMonacoMode = true;
+                    this.Ultralight_monaco_options = Ultralight_monaco_options;
                     await new Promise((resolve) => {
                         this.$nextTick(() => this.$nextTick(resolve));
                     }); // wait for the update
-                }
+                } else this.Ultralight_monaco_options = My_monaco_options;
+                
+                if (this.isAutoDump) queueMicrotask(async () => {
+                    try {
+                        const filename = (await ElMessageBox.prompt('标签读取成功！要立即保存 ' + this.file + ' 吗?', '转储文件编辑器', {
+                            type: 'success',
+                            confirmButtonText: '立即保存',
+                            cancelButtonText: '以后再保存',
+                            inputValue: this.file.replace(/autodump$/i, 'dump'),
+                        })).value;
+                        if (!filename) throw -1;
+                        this.savefile(true, filename);
+                    } catch { }
+                });
 
                 if (this.isMonacoMode) {
                     const arrayBuffer = await this.editdata.arrayBuffer();
@@ -202,16 +207,6 @@ const data = {
 
                 this.$nextTick(() => this.$refs.myEditor.load());
 
-                if (this.isAutoDump) try {
-                    const filename = (await ElMessageBox.prompt('标签读取成功！要立即保存 ' + this.file + ' 吗?', '转储文件编辑器', {
-                        type: 'success',
-                        confirmButtonText: '立即保存',
-                        cancelButtonText: '以后再保存',
-                        inputValue: this.file.replace(/autodump$/i, 'dump'),
-                    })).value;
-                    if (!filename) throw -1;
-                    this.savefile(true, filename);
-                } catch {}
             } catch (error) {
                 ElMessageBox.alert(error, '文件加载失败', {
                     type: 'error',
@@ -288,9 +283,11 @@ const data = {
                 if (v.ok) ElMessage.success('保存成功！');
                 else throw v.status + v.statusText;
                 if (this.isAutoDump) {
-                    fetch('/api/v4.8/api/deleteautodump', {
-                        body: this.file,
-                        method: 'POST'
+                    const url = new URL('/api/v4.8/api/dumpfile', location.href);
+                    url.searchParams.append('filename', this.file);
+                    url.searchParams.append('autodump', 'true');
+                    fetch(url, {
+                        method: 'DELETE'
                     }).then(() => ElMessage.success('临时转储文件已删除!')).catch(e => ElMessage.error('无法删除临时转储文件: ' + e));
                     history.replaceState({}, document.title, '#/dump/' + encodeURIComponent(filename));
                     window.dispatchEvent(new HashChangeEvent('hashchange'));
@@ -342,6 +339,55 @@ const data = {
                     }
                     location.href = '#/tag/mfclassic/write?type=dump&dump=' + encodeURIComponent(this.file);
                     break;
+                
+                case 'exportkeys':
+                    ElMessageBox.prompt('请输入要保存的密钥文件名（如果文件已存在将被覆盖）：', '导出密钥', {
+                        type: 'info',
+                        confirmButtonText: '导出密钥',
+                        cancelButtonText: '现在不导出',
+                    }).then(async ({ value: userfilename }) => {
+                        if (!userfilename) return;
+                        if (true !== await this.savefile(true)) {
+                            return await ElMessageBox.alert('文件保存失败，导出中止!', '导出失败', {
+                                type: 'error', confirmButtonText: '我知道了'
+                            });
+                        }
+                        const blob = await this.getFileBlob(this.file);
+                        const hex = (await formatHex(blob)).split('\n');
+                        const result = new Set();
+                        for (let i = 0, l = hex.length; i < l; ++i) {
+                            if ((i + 1) % 4 === 0 || (i + 1) === l) {
+                                // trailer block
+                                const str = hex[i];
+                                if (str.length !== 32) continue;
+                                const keyA = str.substring(0, 12);
+                                const keyB = str.substring(20, 32);
+                                result.add(keyA);
+                                if (keyA !== keyB) result.add(keyB);
+                            }
+                        }
+                        const resultArray = [];
+                        for (const i of result) {
+                            resultArray.push(i);
+                            resultArray.push('\n');
+                        }
+                        const url = new URL('/api/v4.8/api/keyfile', location.href);
+                        url.searchParams.append('filename', userfilename);
+                        fetch(url, {
+                            method: 'PATCH',
+                            body: new Blob(resultArray),
+                        }).then(v => {
+                            if (!v.ok) throw `HTTP Error ${v.status}: ${v.statusText}`;
+                            ElMessageBox.alert('导出成功！已保存密钥文件 ' + userfilename, '导出成功', {
+                                type: 'success'
+                            });
+                        }).catch(error => {
+                            ElMessageBox.alert('错误: ' + error, '导出失败', {
+                                type: 'error'
+                            });
+                        });
+                    }).catch(() => { });
+                    break;
             
                 default:
                     ElMessage.error('工具不存在');
@@ -360,7 +406,7 @@ const data = {
             userconfig.put('editor.hex.uppercase', this.showUppercase);  
         },
         isMonacoMode() {
-            if (!this.file) return;
+            if (!this.file || !this.enableM1CFunc) return;
             this.$nextTick(() => this.$nextTick(() => this.loadFile()));
         },
         editorType() {

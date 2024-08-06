@@ -1,6 +1,8 @@
 import { getHTML } from '@/assets/js/browser_side-compiler.js';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import KeyReflect from '../KeyReflect/KeyReflect.js';
+import { error_keywords, tickManager } from '../TagReadMfclassic/TagReadMfclassic.js';
+import { ACTION_WRITE, m1_perform_action } from '../../assets/scripts/m1tag-rw.js';
 
 
 const componentId = '99960219-4827-40f0-af99-fe93345faa58';
@@ -9,7 +11,7 @@ const data = {
     data() {
         return {
             page: 1,
-            writePage: 'block',
+            writePage: 'dump',//'block',
             writeBlock: {
                 sector: 0, block: 0, value: ''
             },
@@ -26,6 +28,10 @@ const data = {
             sectorSelectFunc: null,
             write_percent: 0,
             show_advanced: false,
+            sessionId: 0,
+            error分析: '',
+            writeSectorWritten: 0,
+            writeSectorToWrite: 0,
         }
     },
 
@@ -59,30 +65,40 @@ const data = {
             this[this.Myfunc_]();
         },
         executeWriteBlock() {
-            
+            // TODO
+            ElMessage.error('TO-DO Content');
         },
         selectsector(success) {
             this.$refs.sectorSelector.close();
             if (!success) return this.sectorSelectFunc([]);
             const sectors = [];
             for (let i = 0, l = (this.writeSectorAll ? this.writeSectorCount : this.writeSectors.length); i < l; ++i) {
-                if (this.writeSectorAll) { sectors.push(i); continue; }
+                if (this.writeSectorAll) { return this.sectorSelectFunc('all') }
                 const data = this.writeSectors[i];
                 if (data) sectors.push(i);
             }
             this.sectorSelectFunc(sectors)
         },
-        async executeWriteDump() {
+        async executeWriteDump(options) {
             if (!this.writeDump.file) return ElMessage.error('未选择转储文件');
             const sectors = await new Promise((resolve) => {
                 this.sectorSelectFunc = resolve;
+                if (!!(options?.uid)) this.writeDump.b0 = true;
+                else this.writeDump.b0 = false;
                 this.$refs.sectorSelector.showModal();
             });
             if (!sectors.length) return ElMessage.error('未选择扇区');
             this.page = 2;
-            console.log(sectors);
+            this.executeWebSocketRoutine({
+                type: 'write-mfclassic',
+                keyfiles: this.userkeyfile.sort().join('|'),
+                sectors: sectors === 'all' ? undefined : sectors.join(','),
+                writeB0: this.writeDump.b0,
+                unlock: !!(options?.uid),
+                dumpfile: this.writeDump.file,
+            });
         },
-        async executeFormat() {
+        async executeFormat(isUid) {
             try { await ElMessageBox.confirm('确定执行格式化操作吗?', '格式化标签', {
                 type: 'warning',
                 confirmButtonText: '继续',
@@ -91,101 +107,134 @@ const data = {
             this.page = 2;
             this.executeWebSocketRoutine({
                 type: 'format-mfclassic',
-                sessionId: this.sessionId,
                 keyfiles: this.userkeyfile.sort().join('|'),
-                use_mfoc: this.use_mfoc,
-                unlock: this.unlockuid,
-                sector_range: this.sectorAll ? [] : [this.sectorStart, this.sectorEnd],
-            })
+                unlock: 'uid' === isUid || 'uidreset' === isUid,
+                reset: 'uidreset' === isUid,
+            });
         },
-        async executeWebSocketRoutine(messageToSend) {
+        async executeLockUfuid() {
+            try { await ElMessageBox.confirm('确定执行该操作吗?锁定后标签Block 0数据无法再次更改!', '锁定标签', {
+                type: 'error',
+                confirmButtonText: '继续',
+                cancelButtonText: '不继续',
+            }) } catch { return }
+            this.page = 3;
+            try {
+                const resp = await fetch('/api/v4.8/nfc/uid/lock', { method: 'POST' });
+                const text = await resp.text();
+                if (text.includes("后门解锁指令[1/2]: 失败或没有响应")) throw text;
+                if (!resp.ok) throw `HTTP Error ${resp.status}: ${resp.statusText}\n\n${text}`;
 
-            const senderId = String(new Date().getTime());
-            const handler = (ws, data) => {
-                if (data.senderId != senderId) return;
-                appInstance_.ws.deleteHandler('session-created', handler);
-                this.sessionId = data.sessionId;
-
-                this.page = 3;
-                queueMicrotask(() => {
-                    appInstance_.ws.registerSessionHandler(this.sessionId, (ws, data) => {
-                        const log = this.$refs.logDiv;
-                        switch (data.type) {
-                            case 'pipe-created':
-                                switch (data.pipe) {
-                                    case 'pipeKeyFile':
-                                        this.read_percent = 5;
-                                        break;
-
-                                    default:
-                                        break;
-                                }
-                                break;
-
-                            case 'tag-info-loaded':
-                                this.read_percent = 10;
-                                if (log) try {
-                                    const d = JSON.parse(data.data);
-                                    const el = document.createElement('div');
-                                    el.innerText = `标签查询成功！标签信息：\n    UID: ${d.uid}\n   ATQA: ${d.atqa}\n    SAK: ${d.sak}`;
-                                    log.append(el);
-                                } catch (err) { console.warn('[reader]', 'unhandled error:', err) }
-                                break;
-
-                            case 'tag-read-started':
-                                this.read_percent = 20;
-                                tickManager.add(this);
-                                tickManager.ontick(this.ontick);
-                                break;
-
-                            case 'run-log':
-                                if (log) {
-                                    log.append(document.createTextNode(data.data));
-                                }
-                                break;
-
-                            case 'action-ended':
-                                if (!data.success) {
-                                    this.page = 10002;
-                                    this.errorText = data.errorText;
-                                    queueMicrotask(() => this.分析错误());
-                                } else {
-                                    this.page = 9999;
-                                    // this.isDone = true;
-                                    this.dumpFile = data.file;
-                                    this.read_percent = 100;
-                                }
-                                tickManager.delete(this);
-                                tickManager.cancel_ontick(this.ontick);
-                                // console.log('AE', data);
-                                break;
-
-                            default:
-                                if (typeof data !== 'string')
-                                    console.warn('[tag-read]', 'unknown data type:', data);
-                        }
-                        // if (log) {
-                        //     const el = document.createElement('div');
-                        //     el.innerText = JSON.stringify(data, null, 2);
-                        //     log.append(el);
-                        // }
-                    });
-                    appInstance_.ws.s(messageToSend);
-                    this.write_percent = 2;
+                this.page = 9999;
+                this.write_percent = 100;
+                this.writeSectorWritten = 'N';
+                this.writeSectorToWrite = 'A';
+                const logNode = (node) => this.$refs.logDiv?.append(node);
+                const log = (text) => logNode(document.createTextNode(text));
+                log(text);
+                ElMessageBox.alert('操作成功！', '锁定标签', {
+                    type: 'success'
                 });
             }
-            appInstance_.ws.registerHandler('session-created', handler);
-            const handler_end = (ws, data) => {
-                if (data.sessionId != this.sessionId) return;
-                appInstance_.ws.deleteHandler('session-ended', handler_end);
-
+            catch (error) {
+                this.page = 10002;
+                this.errorText = '意外错误：' + error;
+            }
+        },
+        retryAction() {
+            globalThis.appInstance_.instance.current_page = 'blank';
+            globalThis.appInstance_.instance.$nextTick(() => {
+                globalThis.appInstance_.instance.$nextTick(() => {
+                    window.dispatchEvent(new HashChangeEvent('hashchange'));
+                })
+            });
+        },
+        ontick_A() {
+            if (this.write_percent < 75) ++this.write_percent;
+        },
+        ontick_B() {
+            if (this.write_percent < 95) ++this.write_percent;
+        },
+        async executeWebSocketRoutine(messageToSend) {
+            const nop = function () { };
+            const logNode = (node) => this.$refs.logDiv?.append(node);
+            const log = (text) => logNode(document.createTextNode(text));
+            m1_perform_action(ACTION_WRITE, {
+                'pipe-created': () => {
+                    this.write_percent += 5;
+                },
+                'tag-read-started': () => {
+                    this.write_percent = 20;
+                    tickManager.add(this);
+                    tickManager.ontick(this.ontick_A);
+                },
+                'tag-read-ended': () => {
+                    this.write_percent = 78;
+                    tickManager.delete(this);
+                    tickManager.cancel_ontick(this.ontick_A);
+                },
+                'tag-write-started': () => {
+                    this.write_percent = 80;
+                    tickManager.add(this);
+                    tickManager.ontick(this.ontick_B);
+                },
+            }, nop, messageToSend, {
+                established: data => {
+                    this.sessionId = data.sessionId;
+                    this.page = 3;
+                },
+                sent: data => {
+                    this.write_percent = 2;
+                },
+                log: data => {
+                    log(data.data);
+                },
+                end: data => {
+                    if (this.page < 100) {
+                        this.page = 10001;
+                        this.errorText = '服务器意外中断了会话。';
+                    }
+                },
+            }).then(result => result ? JSON.parse(result) : null).then(result => {
+                this.page = 9999;
+                this.write_percent = 100;
+                if (result) {
+                    this.writeSectorWritten = result.blocksWritten;
+                    this.writeSectorToWrite = result.blocksToWrite;
+                } else {
+                    this.writeSectorWritten = 'N';
+                    this.writeSectorToWrite = 'A';
+                }
+                tickManager.delete(this);
+                tickManager.cancel_ontick(this.ontick_B);
+            }).catch(error => {
                 if (this.page < 100) {
-                    this.page = 10001;
-                    this.errorText = '服务器意外中断了会话。';
+                    this.page = 10002;
+                    this.errorText = error.errorText;
+                    queueMicrotask(() => this.分析错误());
+                }
+            });
+
+
+        },
+        分析错误() {
+            this.error分析 = '正在分析错误信息...';
+            const text = this.errorText;
+
+            for (const i of Reflect.ownKeys(error_keywords)) {
+                if (text.includes(i)) {
+                    this.error分析 = error_keywords[i]; return;
                 }
             }
-            appInstance_.ws.registerHandler('session-ended', handler_end);
-            appInstance_.ws.s({ type: 'create-session', senderId });
+
+            this.error分析 = '暂无可用的分析信息';
+        },
+        doneWrite() {
+            if (history.length > 1 && navigation.canGoBack) history.back();
+            else {
+                history.replaceState({}, document.title, '#/');
+                window.dispatchEvent(new HashChangeEvent('hashchange'));
+            }
         },
     },
 

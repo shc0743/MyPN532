@@ -52,6 +52,14 @@ const data = {
             globalThis.appInstance_.instance.showGuide = true;
             location.href = '#/';
         },
+        exitAppImmediately() {
+            fetch('/api/v4.8/app/exit', { method: 'POST' }).then(v => {
+                window.close();
+                setTimeout(() => document.write('<h1>应用程序已退出'), 1000);
+            }).catch(error => {
+                ElMessage.error('无法退出应用程序: ' + error);
+            })
+        },
 
     },
 

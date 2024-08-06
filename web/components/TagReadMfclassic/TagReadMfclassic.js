@@ -6,15 +6,20 @@ import KeyReflect from '../KeyReflect/KeyReflect.js';
 
 const componentId = '8997e573-122a-4b41-a60f-99f05350a37b';
 
+import { ACTION_READ, m1_perform_action } from '../../assets/scripts/m1tag-rw.js';
+
 import { TickManager } from '../../assets/js/TickManager.js';
-const tickManager = new TickManager(200);
+export const tickManager = new TickManager(200);
 
 
-const error_keywords = {
+export const error_keywords = {
     'Error opening NFC reader': '无法连接读卡器，请检查设备连接情况',
     'Error: No tag available': '未找到标签，请将标签放在读卡器上',
     'No sector encrypted with the default key has been found, exiting..': '该标签为全加密，没有可用的密钥',
-    "Note: This card can't do an unlocked read (R) ": '该标签不是1代魔术标签(UID卡)，无法使用解锁模式读取，请使用正常方法读取',
+    "ERROR: This card can't do an unlocked ": '该标签不是1代魔术标签(UID卡)，无法使用解锁模式读取，请使用正常方法读取',
+    'Error: tag was removed': '标签可能被移走，请重试；若反复出现，则标签控制块可能损坏，如果是UID卡可以重置，其他卡大概率报废',
+    'Could not open dump file:': '转储文件不存在，请检查文件可用性；如果尚未保存过此文件（文件后缀是autodump），请先保存一次再继续',
+    'Try again, there are still some encrypted blocks': '标签解密失败，请尝试使用mfoc手动增加probes解密',
 };
 
 const data = {
@@ -30,6 +35,7 @@ const data = {
             sectorStart: 0,
             sectorEnd: null,
             use_mfoc: false,
+            use_raw_mfoc: false,
             dumpFile: '',
             unlockuid: false,
             error分析: '',
@@ -54,101 +60,78 @@ const data = {
             this.userkeyfile = keylist;
             this.page = 1;
 
-            if (!this.unlockuid) userconfig.put('nfc.read.default.mfoc', String(this.use_mfoc)).catch(() => {});
+            if (!this.unlockuid) userconfig.put('nfc.read.default.mfoc', String(this.use_mfoc)).catch(() => { });
 
-            const senderId = String(new Date().getTime());
-            const handler = (ws, data) => {
-                if (data.senderId != senderId) return;
-                appInstance_.ws.deleteHandler('session-created', handler);
-                this.sessionId = data.sessionId;
-
-                this.page = 3;
-                queueMicrotask(() => {
-                    appInstance_.ws.registerSessionHandler(this.sessionId, (ws, data) => {
-                        const log = this.$refs.logDiv;
-                        switch (data.type) {
-                            case 'pipe-created':
-                                switch (data.pipe) {
-                                    case 'pipeKeyFile':
-                                        this.read_percent = 5;
-                                        break;
-                                
-                                    default:
-                                        break;
-                                }
-                                break;
-                            
-                            case 'tag-info-loaded':
-                                this.read_percent = 10;
-                                if (log) try {
-                                    const d = JSON.parse(data.data);
-                                    const el = document.createElement('div');
-                                    el.innerText = `标签查询成功！标签信息：\n    UID: ${d.uid}\n   ATQA: ${d.atqa}\n    SAK: ${d.sak}`;
-                                    log.append(el);
-                                } catch (err) { console.warn('[reader]', 'unhandled error:', err) }
-                                break;
-                            
-                            case 'tag-read-started':
-                                this.read_percent = 20;
-                                tickManager.add(this);
-                                tickManager.ontick(this.ontick);
-                                break;
-
-                            case 'run-log':
-                                if (log) {
-                                    log.append(document.createTextNode(data.data));
-                                }
-                                break;
-                            
-                            case 'action-ended':
-                                if (!data.success) {
-                                    this.page = 10002;
-                                    this.errorText = data.errorText;
-                                    queueMicrotask(() => this.分析错误());
-                                } else {
-                                    this.page = 9999;
-                                    // this.isDone = true;
-                                    this.dumpFile = data.file;
-                                    this.read_percent = 100;
-                                }
-                                tickManager.delete(this);
-                                tickManager.cancel_ontick(this.ontick);
-                                // console.log('AE', data);
-                                break;
-                            
-                            default:
-                                if (typeof data !== 'string')
-                                    console.warn('[tag-read]', 'unknown data type:', data);
-                        }
-                        // if (log) {
-                        //     const el = document.createElement('div');
-                        //     el.innerText = JSON.stringify(data, null, 2);
-                        //     log.append(el);
-                        // }
-                    });
-                    appInstance_.ws.s({
-                        type: 'read-nfc-tag-mfclassic',
-                        sessionId: this.sessionId,
-                        keyfiles: this.userkeyfile.sort().join('|'),
-                        use_mfoc: this.use_mfoc,
-                        unlock: this.unlockuid,
-                        sector_range: this.sectorAll ? [] : [+this.sectorStart, +this.sectorEnd],
-                    });
+            const nop = function () { };
+            const logNode = (node) => this.$refs.logDiv?.append(node);
+            const log = (text) => logNode(document.createTextNode(text));
+            m1_perform_action(ACTION_READ, {
+                'pipe-created': data => {
+                    switch (data.pipe) {
+                        case 'pipeKeyFile':
+                            this.read_percent = 5;
+                            break;
+                        default: ;
+                    }
+                },
+                'tag-info-loaded': data => {
+                    this.read_percent = 10;
+                    try {
+                        const d = JSON.parse(data.data);
+                        const el = document.createElement('div');
+                        el.innerText = `标签查询成功！标签信息：\n    UID: ${d.uid}\n   ATQA: ${d.atqa}\n    SAK: ${d.sak}`;
+                        logNode(el);
+                    } catch (err) { console.warn('[reader]', 'unhandled error:', err) }
+                },
+                'tag-read-started': data => {
+                    this.read_percent = 20;
+                    tickManager.add(this);
+                    tickManager.ontick(this.ontick);
+                },
+                'action-ended': data => {
+                    if (!data.success) {
+                        this.page = 10002;
+                        this.errorText = data.errorText;
+                        queueMicrotask(() => this.分析错误());
+                    }
+                    tickManager.delete(this);
+                    tickManager.cancel_ontick(this.ontick);
+                    // console.log('AE', data);
+                },
+            }, nop, {
+                keyfiles: this.userkeyfile.sort().join('|'),
+                use_mfoc: this.use_mfoc,
+                use_raw_mfoc: this.use_mfoc ? this.use_raw_mfoc : false,
+                unlock: this.unlockuid,
+                sector_range: this.sectorAll ? [] : [+this.sectorStart, +this.sectorEnd],
+            }, {
+                established: data => {
+                    this.sessionId = data.sessionId;
+                    this.page = 3;
+                },
+                sent: data => {
                     this.read_percent = 2;
-                });
-            }
-            appInstance_.ws.registerHandler('session-created', handler);
-            const handler_end = (ws, data) => {
-                if (data.sessionId != this.sessionId) return;
-                appInstance_.ws.deleteHandler('session-ended', handler_end);
-                
+                },
+                log: data => {
+                    log(data.data);
+                },
+                end: data => {
+                    if (this.page < 100) {
+                        this.page = 10001;
+                        this.errorText = '服务器意外中断了会话。';
+                    }
+                },
+            }).then(file => {
+                this.page = 9999;
+                this.dumpFile = file;
+                this.read_percent = 100;
+            }).catch(error => {
                 if (this.page < 100) {
-                    this.page = 10001;
-                    this.errorText = '服务器意外中断了会话。';
+                    this.page = 10003;
+                    this.errorText = '意外错误: ' + error;
                 }
-            }
-            appInstance_.ws.registerHandler('session-ended', handler_end);
-            appInstance_.ws.s({ type: 'create-session', senderId });
+            });
+
         },
         rununlockuid() {
             this.unlockuid = true;

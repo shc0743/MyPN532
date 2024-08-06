@@ -172,6 +172,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\resource\tool.cpp" />
+    <ClCompile Include="better-mfoc.cpp" />
     <ClCompile Include="mfclassic-read.cpp" />
     <ClCompile Include="mfclassic.cpp" />
     <ClCompile Include="mfoc-codes\crapto1.c" />

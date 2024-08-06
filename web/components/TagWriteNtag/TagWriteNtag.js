@@ -18,7 +18,8 @@ const data = {
                 b0: false,
             },
             text: '',
-            option: [false,false,false,false],
+            option: [false, false, false, false],
+            allowResizedWrite: false,
         }
     },
 
@@ -48,6 +49,7 @@ const data = {
                 file: this.writeDump.file,
                 pw: this.pw ? this.pw : undefined,
                 option: this.option.map(v => v ? 1 : 0).join(''),
+                allowResizedWrite: this.allowResizedWrite,
             };
             fetch('/api/v4.8/nfc/ultralight/write', {
                 method: 'POST',

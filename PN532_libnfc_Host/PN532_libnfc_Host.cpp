@@ -50,7 +50,7 @@ DWORD Echo(PVOID buffer, DWORD count) {
 DWORD Echo(string str) {
 	DWORD write, written = 0;
 	write = DWORD(
-		(SIZE_T(str.length()) + 1) *
+		(SIZE_T(str.length())) *
 		sizeof(decltype(str)::allocator_type::value_type));
 	return Echo(str.data(), write);
 }
@@ -64,6 +64,7 @@ int nfc_query_card_info();
 int nfc_mful(CmdLineW&);
 int nfc_mfclassic(CmdLineW&);
 int nfc_mfclassic_read(CmdLineW&);
+int nfc_bettermfoc(CmdLineW&);
 
 
 
@@ -101,6 +102,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 	if (type == L"mfclassic-read") {
 		return nfc_mfclassic_read(cl);
+	}
+	if (type == L"better-mfoc") {
+		return nfc_bettermfoc(cl);
 	}
 	if (type == L"mful") {
 		return nfc_mful(cl);

@@ -60,7 +60,12 @@ const data = {
             this.cfgDefaultDevice = '';
             this.nfcDevices.length = 0;
             try {
-                this.cfgDefaultDevice = await (await fetch('/api/v4.8/nfc/defaultdevice')).text()//userconfig.get('nfc.device.default');
+                const defaultdeviceresp = await fetch('/api/v4.8/nfc/defaultdevice');
+                if (defaultdeviceresp.headers.get('x-device-not-recognized') === 'true') {
+                    this.cfgDefaultDevice = '无法连接，可能是由于设备未插入或更换了USB插口，详情请把鼠标放到此处查看|如果设备未插入，请插入设备然后刷新页面；如果是更换了USB口，请重新扫描设备';
+                } else {
+                    this.cfgDefaultDevice = await defaultdeviceresp.text();
+                }
                 if (!this.cfgDefaultDevice) {
                     await this.loadDevList(false);
                     this.showDeviceTour = true;

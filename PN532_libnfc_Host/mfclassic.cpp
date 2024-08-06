@@ -17,6 +17,8 @@
 
 #include "mifare.h"
 #include "../../resource/tool.h"
+#include <set>
+#include <json/json.h>
 using namespace std;
 
 static nfc_context *context;
@@ -66,6 +68,12 @@ uint8_t abtUnlock1[1] = { 0x40 };
 uint8_t abtUnlock2[1] = { 0x43 };
 DWORD Echo(PVOID buffer, DWORD count);
 DWORD Echo(std::wstring str);
+DWORD Echo(std::string str);
+
+// other
+static std::set<int> sectorsToWrite;
+static bool useSectorsToWrite;
+static bool bOnlySetUid; // TODO
 
 static bool
 transmit_bits(const uint8_t *pbtTx, const size_t szTxBits)
@@ -95,6 +103,12 @@ static void
 print_success_or_failure(bool bFailure, uint32_t *uiBlockCounter)
 {
 	printf("%c", (bFailure) ? 'x' : '.');
+	if (uiBlockCounter && !bFailure)
+		*uiBlockCounter += 1;
+}
+static void
+print_success_or_failure_2(bool bFailure, uint32_t *uiBlockCounter)
+{
 	if (uiBlockCounter && !bFailure)
 		*uiBlockCounter += 1;
 }
@@ -163,6 +177,10 @@ authenticate(uint32_t uiBlock)
 		if (nfc_initiator_mifare_cmd(pnd, mc, uiBlock, &mp))
 			return true;
 
+		if (nfc_initiator_select_passive_target(pnd, nmMifare, nt.nti.nai.abtUid, nt.nti.nai.szUidLen, NULL) <= 0) {
+			ERR("tag was removed");
+			return false;
+		}
 		// If formatting or not using key file, try to guess the right key
 	}
 #if 1
@@ -208,10 +226,10 @@ unlock_card(bool write)
 	// now send unlock
 	if (!transmit_bits(abtUnlock1, 7)) {
 		printf("Warning: Unlock command [1/2]: failed / not acknowledged.\n");
-		dWrite = true;
-		if (write) {
-			printf("Trying to rewrite block 0 on a direct write tag.\n");
-		}
+		//dWrite = true;
+		//if (write) {
+		//	printf("Trying to rewrite block 0 on a direct write tag.\n");
+		//}
 	} else {
 		if (transmit_bytes(abtUnlock2, 1)) {
 			printf("Card unlocked\n");
@@ -357,22 +375,49 @@ read_card(bool read_unlocked)
 }
 
 static bool
-write_card(bool write_block_zero)
+write_card(bool unlock, bool write_block_zero)
 {
 	uint32_t uiBlock;
 	bool bFailure = false;
 	uint32_t uiWriteBlocks = 0;
 
 	//Determine if we have to unlock the card
-	if (write_block_zero) {
+#if 1
+	if (unlock) {
 		unlock_card(true);
+		if (!dWrite && !unlocked) {
+			Echo("ERROR: This card can't do an unlocked write\n");
+			return false;
+		}
 	}
+#else
+	if (write_block_zero) {
+		if (write_B0) {
+			unlock_card(1);
+			if (!dWrite && !unlocked) {
+				printf("ERROR: This card can't do an unlocked write (W) \n");
+				return 0;
+			}
+			printf("Note: Don't need to unlock write\n");
+		}
+		unlock_card(0);
+		if (dWrite) {
+			printf("Note: Don't need to unlock write\n");
+		}
+		if (!unlocked) {
+			printf("ERROR: This card can't do an unlocked write (W) \n");
+			return 0;
+		}
+	}
+#endif
 
-	Echo(L"Writing " + to_wstring(uiBlocks + (write_block_zero ? 1 : 0)) + L" blocks |");
+	Echo("Writing " + to_string(uiBlocks + (write_block_zero ? 1 : 0)) + " blocks |\n");
 	// Completely write the card, but skipping block 0 if we don't need to write on it
 	for (uiBlock = 0; uiBlock <= uiBlocks; uiBlock++) {
+		Echo("Writing block " + to_string(uiBlock) + "... ");
 		//Determine if we have to write block 0
-		if (!write_block_zero && uiBlock == 0) {
+		if (uiBlock == 0 && (!write_block_zero || bFormatCard)) {
+			Echo("Skipped\n");
 			continue;
 		}
 		// Authenticate everytime we reach the first sector of a new block
@@ -380,7 +425,7 @@ write_card(bool write_block_zero)
 			if (bFailure) {
 				// When a failure occured we need to redo the anti-collision
 				if (nfc_initiator_select_passive_target(pnd, nmMifare, NULL, 0, &nt) <= 0) {
-					printf("!\nError: tag was removed\n");
+					Echo("!\nError: tag was removed\n");
 					return false;
 				}
 				bFailure = false;
@@ -388,15 +433,33 @@ write_card(bool write_block_zero)
 
 			fflush(stdout);
 
+			// CUID写完0块后需要重新anticol
+			if ((write_block_zero && !unlock)) {
+				if (nfc_initiator_select_passive_target(pnd, nmMifare, NULL, 0, &nt) <= 0) {
+					Echo("!\nError: tag was removed\n");
+					return false;
+				}
+			}
+
 			// Try to authenticate for the current sector
 			// If we are are writing to a chinese magic card, we've already unlocked
 			// If we're writing to a direct write card, we need to authenticate
 			// If we're writing something else, we'll need to authenticate
-			if ((write_block_zero && dWrite) || !write_block_zero) {
-				if (!authenticate(uiBlock) && !bTolerateFailures) {
-					printf("!\nError: authentication failed for block %02x\n", uiBlock);
-					return false;
-				}
+			if ((write_block_zero && dWrite) || (write_block_zero && !unlock) || !write_block_zero || uiBlock > 0) {
+				constexpr size_t MAX_RETRY_COUNT = 3;
+				for (size_t i = 0; i < MAX_RETRY_COUNT; ++i)
+					if (!authenticate(uiBlock)) {
+						printf("[!Error: authentication failed for block %02x%s] ", uiBlock,
+							i < MAX_RETRY_COUNT ? "Retrying..." : "");
+						if (!bTolerateFailures) return false;
+					}
+			}
+		}
+
+		if (useSectorsToWrite) {
+			if (!sectorsToWrite.contains((uiBlock / 4))) {
+				Echo("Skipped\n");
+				continue;
 			}
 		}
 
@@ -415,7 +478,7 @@ write_card(bool write_block_zero)
 
 				// Try to write the trailer
 				if (nfc_initiator_mifare_cmd(pnd, MC_WRITE, uiBlock, &mp) == false) {
-					printf("failed to write trailer block %d \n", uiBlock);
+					Echo("failed to write trailer block " + to_string(uiBlock) + "\n");
 					bFailure = true;
 				}
 			} else {
@@ -423,31 +486,29 @@ write_card(bool write_block_zero)
 				if (!bFailure) {
 					// Try to write the data block
 					if (bFormatCard && uiBlock)
-
 						memset(mp.mpd.abtData, 0x00, sizeof(mp.mpd.abtData));
 					else
 						memcpy(mp.mpd.abtData, mtDump.amb[uiBlock].mbd.abtData, sizeof(mp.mpd.abtData));
 					// do not write a block 0 with incorrect BCC - card will be made invalid!
 					if (uiBlock == 0) {
 						if ((mp.mpd.abtData[0] ^ mp.mpd.abtData[1] ^ mp.mpd.abtData[2] ^ mp.mpd.abtData[3] ^ mp.mpd.abtData[4]) != 0x00) {
-							Echo(L"!\nError: incorrect BCC in MFD file!\n");
-							Echo(L"Expecting BCC=(decimal)" + to_wstring(mp.mpd.abtData[0] ^ mp.mpd.abtData[1] ^ mp.mpd.abtData[2] ^ mp.mpd.abtData[3]) + L"\n");
+							Echo("!\nError: incorrect BCC in MFD file!\n");
+							Echo("Expecting BCC=(decimal)" + to_string(mp.mpd.abtData[0] ^ mp.mpd.abtData[1] ^ mp.mpd.abtData[2] ^ mp.mpd.abtData[3]) + "\n");
 							return false;
 						}
 					}
 					if (!nfc_initiator_mifare_cmd(pnd, MC_WRITE, uiBlock, &mp)) {
 						bFailure = true;
-						Echo(L"Failure to write to data block " + to_wstring(uiBlock) + L"\n");
+						nfc_perror(pnd, "nfc_initiator_mifare_cmd");
+						Echo("Failure to write to data block " + to_string(uiBlock) + " ");
 					}
 					if (uiBlock == 0 && dWrite) {
 						if (nfc_initiator_init(pnd) < 0) {
 							nfc_perror(pnd, "nfc_initiator_init");
-							nfc_close(pnd);
-							nfc_exit(context);
-							return(EXIT_FAILURE);
+							return false;
 						};
 						if (nfc_initiator_select_passive_target(pnd, nmMifare, NULL, 0, &nt) <= 0) {
-							printf("!\nError: tag was removed\n");
+							Echo("!\nError: tag was removed\n");
 							return false;
 						}
 					}
@@ -457,7 +518,8 @@ write_card(bool write_block_zero)
 			}
 		//}
 		// Show if the write went well for each block
-		print_success_or_failure(bFailure, &uiWriteBlocks);
+		print_success_or_failure_2(bFailure, &uiWriteBlocks);
+		Echo(bFailure ? "Failed\n" : "Success\n");
 		if ((! bTolerateFailures) && bFailure)
 			return false;
 	}
@@ -465,8 +527,15 @@ write_card(bool write_block_zero)
 	Echo(L"|\n");
 	char szbuffer[256]{};
 	sprintf_s(szbuffer, "Done, %d of %d blocks written.\n", uiWriteBlocks, uiBlocks + 1);
-	Echo(s2ws(szbuffer));
+	Echo((szbuffer));
 	fflush(stdout);
+
+	Json::Value result;
+	result["success"] = true;
+	result["blocksToWrite"] = uiBlocks + 1;
+	result["blocksWritten"] = uiWriteBlocks;
+	Json::FastWriter fastWriter;
+	Echo("@@" + fastWriter.write(result) + "@@");
 
 	return true;
 }
@@ -533,11 +602,11 @@ int nfc_mfclassic(CmdLineW& cl)
 		bUseKeyA = cl.getopt(L"use-key-a") != 0;
 		bTolerateFailures = true;
 		bUseKeyFile = true;
-	} else if (command == L"w" || command == L"W" || command == L"f") {
+	} else if (command == L"w" || command == L"W" || command == L"f" || command == L"F") {
 		atAction = ACTION_WRITE;
-		if (command == L"W")
+		if (command == L"W" || command == L"F")
 			unlock = true;
-		bFormatCard = (command == L"f");
+		bFormatCard = (command == L"f" || command == L"F");
 		bUseKeyA = cl.getopt(L"use-key-a") != 0;
 		bTolerateFailures = true;
 		bUseKeyFile = true;
@@ -554,8 +623,15 @@ int nfc_mfclassic(CmdLineW& cl)
 			return 87;
 	}
 
-	wstring sectors;
-	cl.getopt(L"sectors", sectors);
+	wstring secs; cl.getopt(L"sectors", secs);
+	if (!secs.empty()) {
+		vector<wstring> temp;
+		str_split(secs, L",", temp);
+		for (auto& i : temp) {
+			sectorsToWrite.insert(atoi(ws2c(i)));
+		}
+	}
+	if (!sectorsToWrite.empty()) useSectorsToWrite = true;
 
 	tag_uid = NULL;
 
@@ -714,7 +790,7 @@ int nfc_mfclassic(CmdLineW& cl)
 	if (atAction == ACTION_READ) {
 		memset(&mtDump, 0x00, sizeof(mtDump));
 	}
-	else {
+	else if (!dumpFileName.empty()) {
 		HANDLE pfDump = CreateFileW(dumpFileName.c_str(), GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
 		if (pfDump == INVALID_HANDLE_VALUE) {
 			cerr << "Could not open dump file: " << ws2s(dumpFileName) << endl;
@@ -735,30 +811,15 @@ int nfc_mfclassic(CmdLineW& cl)
 		if (read_card(unlock)) {
 			printf("Writing data to file:  ...");
 			fflush(stdout); DWORD written{};
-			//HANDLE pfDump = CreateFileW(dumpFileName.c_str(), GENERIC_WRITE, 0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
-			//if (pfDump == INVALID_HANDLE_VALUE) {
-			//	printf("Could not open dump file: \n");
-			//	nfc_close(pnd);
-			//	nfc_exit(context);
-			//	return(EXIT_FAILURE);
-			//}
-			//if (!WriteFile(pfDump, &mtDump, ((size_t)uiBlocks + 1) * sizeof(mifare_classic_block), &written, 0) || written != (((size_t)uiBlocks + 1) * sizeof(mifare_classic_block))) {
-			//	printf("\nCould not write to file:\n");
-			//	CloseHandle(pfDump);
-			//	nfc_close(pnd);
-			//	nfc_exit(context);
-			//	return(EXIT_FAILURE);
-			//}
 			Echo(&mtDump, DWORD(((size_t)uiBlocks + 1) * sizeof(mifare_classic_block)));
 			printf("Done.\n");
-			//CloseHandle(pfDump);
 		} else {
 			nfc_close(pnd);
 			nfc_exit(context);
 			return(EXIT_FAILURE);
 		}
 	} else if (atAction == ACTION_WRITE) {
-		if (!write_card(unlock)) {
+		if (!write_card(unlock, cl.getopt(L"write-block-0"))) {
 			nfc_close(pnd);
 			nfc_exit(context);
 			return(EXIT_FAILURE);

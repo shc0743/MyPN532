@@ -27,6 +27,7 @@ extern size_t appConnectedTimes;
 
 #include <openssl/bio.h>
 #include <openssl/evp.h>
+#include <openssl/buffer.h>
 #include "检测端口是否被占用.hpp"
 
 std::string base64_encode(const std::string& data) {
@@ -56,6 +57,47 @@ std::string base64_encode(const std::string& data) {
 	delete[] base64_data; // Don't forget to delete the allocated memory
 
 	BIO_free_all(b64);
+	return result;
+}
+std::string base64_decode(const std::string& encoded_data) {
+	BIO* b64 = BIO_new(BIO_f_base64());
+	BIO_set_flags(b64, BIO_FLAGS_BASE64_NO_NL); // Don't use newlines to flush buffer  
+
+	BIO* mem = BIO_new(BIO_s_mem());
+	BIO_push(b64, mem);
+
+	// Write the encoded data to the BIO  
+	BIO_write(b64, encoded_data.data(), (int)encoded_data.size());
+
+	// Create a buffer to hold the decoded data  
+	BUF_MEM* bufferPtr;
+	BIO_get_mem_ptr(mem, &bufferPtr);
+
+	// BIO_read is not suitable here because the base64 filter BIO  
+	// does not automatically remove padding. We use the buffer directly.  
+	std::vector<char> decoded_bytes(bufferPtr->length, 0);
+	std::copy(bufferPtr->data, bufferPtr->data + bufferPtr->length, decoded_bytes.begin());
+
+	// Free the BIOs  
+	BIO_free_all(b64);
+
+	// Remove padding '=' characters if any  
+	// Note: This is a simple approach, assuming '=' can only appear at the end  
+	// and that the encoded data is valid.  
+	size_t padding = 0;
+	if (encoded_data.back() == '=') {
+		++padding;
+		if (encoded_data.size() > 1 && encoded_data[encoded_data.size() - 2] == '=') {
+			++padding;
+		}
+	}
+
+	// Adjust the size of the decoded data based on padding  
+	decoded_bytes.resize(decoded_bytes.size() - padding);
+
+	// Convert vector to string  
+	std::string result(decoded_bytes.begin(), decoded_bytes.end());
+
 	return result;
 }
 

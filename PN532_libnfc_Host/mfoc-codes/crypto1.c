@@ -28,8 +28,8 @@ struct Crypto1State *crypto1_create(uint64_t key) {
   int i;
 
   for (i = 47; s && i > 0; i -= 2) {
-    s->odd  = s->odd  << 1 | BIT(key, (i - 1) ^ 7);
-    s->even = s->even << 1 | BIT(key, i ^ 7);
+      s->odd = (unsigned long long)(s->odd) << 1 | BIT(key, (i - 1) ^ 7);
+      s->even = (unsigned long long)(s->even) << 1 | BIT(key, i ^ 7);
   }
   return s;
 }

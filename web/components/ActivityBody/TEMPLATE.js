@@ -1,5 +1,5 @@
 import { getHTML, getVdeep } from '@/assets/js/browser_side-compiler.js';
-import { addCSS } from '../../BindMove.js';
+import { addCSS } from '@/BindMove.js';
 
 
 const componentId = 'b82d54d7-db7a-4bb5-9c34-d4f2a6b455a4';

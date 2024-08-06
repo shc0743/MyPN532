@@ -15,6 +15,7 @@
             <div v-deep class="input-area"><ElCheckbox v-model="option[1]">写 Lock Bytes (Warning: OTP if set)</ElCheckbox></div>
             <div v-deep class="input-area"><ElCheckbox v-model="option[2]">写 Dynamic Lock Bytes</ElCheckbox></div>
             <div v-deep class="input-area"><ElCheckbox v-model="option[3]">写 UID bytes (only for special writeable UID cards)</ElCheckbox></div>
+            <div v-deep class="input-area"><ElCheckbox v-model="allowResizedWrite">允许转储文件大小小于标签实际大小</ElCheckbox></div>
             <a style="margin-top: 1em; font-size: x-large;" href="#" @click.prevent="writeit">点击写入</a>
         </div>
         <div v-if="hasStarted && !hasFinished">正在写入，请稍候...</div>

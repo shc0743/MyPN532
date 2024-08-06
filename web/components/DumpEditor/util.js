@@ -30,6 +30,8 @@ function hexStringToArrayBuffer(hexString) {
     // 去除字符串中的换行符和空格  
     hexString = hexString.replace(/[\r\n\s]+/g, '');
 
+    if (!hexString) return new ArrayBuffer(0);
+
     // 检查字符串是否为有效的十六进制  
     const hexPattern = /^[0-9a-fA-F]+$/;
     if (!hexPattern.test(hexString)) {
@@ -57,3 +59,28 @@ function hexStringToArrayBuffer(hexString) {
 }  
 
 export { formatHex, formatHexFromUint8Array, hexStringToArrayBuffer };
+
+
+export function formatHexFromUint8ArrayBeautifully(arrayBuffer, 间隔符号 = ' ') {
+    // 使用Uint8Array来访问ArrayBuffer中的每个字节  
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    // 初始化一个字符串用于存放最终的十六进制表示  
+    let hexString = '';
+
+    // 遍历Uint8Array  
+    for (let i = 0; i < uint8Array.length; i++) {
+        // 将每个字节转换为两位的十六进制字符串，并添加到hexString中  
+        hexString += uint8Array[i].toString(16).padStart(2, '0') + 间隔符号;
+
+        // 每16个字节后添加换行符  
+        if ((i + 1) % 16 === 0) {
+            hexString += '\n';
+        }
+    }
+
+    // 如果最后一组不足16个字节，则可能不需要添加换行符，但上面的逻辑已经正确处理了这一点  
+
+    return hexString.trimEnd();
+}
+

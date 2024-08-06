@@ -20,7 +20,7 @@ a[disabled] {
     color: #a0a0a0;
 }
 
-*:disabled, *[disabled] {
+*:disabled, *[disabled], *[inert] {
     cursor: not-allowed !important;
 }
 

@@ -95,10 +95,10 @@ MySectorEditorStyle.replaceSync(`
 .mfsector-editor .token.token-normal {
     --token-color: #111111;
 }
-.mfsector-editor .token.token-trailer {
+.mfsector-editor .token.token-manufacture {
     --token-color: #9438f5;
 }
-.mfsector-editor .token.token-reserved {
+.mfsector-editor .token.token-gpb { /* General Purpose Bit */
     --token-color: #777777;
 }
 .mfsector-editor .token.token-value-block {
@@ -187,7 +187,7 @@ class MySectorEditor extends HTMLElement {
 
             if (dataIndex === 0 && this.is_manufacture) {
                 const token = document.createElement('span');
-                token.className = 'token token-trailer';
+                token.className = 'token token-manufacture';
                 token.innerText = data;
                 blockView.append(token);
                 
@@ -200,7 +200,7 @@ class MySectorEditor extends HTMLElement {
                 }
             }
             else if (dataIndex + 1 === this.#data.length) {
-                const tokenType = ['keya', 'acl', 'reserved', 'keyb', 'unknown'];
+                const tokenType = ['keya', 'acl', 'gpb', 'keyb', 'unknown'];
                 const config = [[0, 12], [12, 18], [18, 20], [20, 32], [32]];
                 for (let i = 0, l = config.length; i < l; ++i) {
                     const token = document.createElement('span');
@@ -262,7 +262,7 @@ class MySectorEditor extends HTMLElement {
             //     .trim()
             //     .split('\n')
             //     .join('')))).split('\n'); // 重新分组数据
-            const lines = this.#el.innerText.trim().split('\n');
+            const lines = this.#el.innerText.trim().split('\n').filter(el => !!el);
             const userSelection = this.#shadow.getSelection().getRangeAt(0);
             const { selectionStart, isInStart } = (() => {
                 if (!userSelection) return {};
@@ -301,13 +301,20 @@ class MySectorEditor extends HTMLElement {
                 if (len === -1) return { selectionStart: 0 };
                 return { selectionStart: len, isInStart: iis };
             })();
-            const lastElemIndex = lines.length - 1;
-            if (lastElemIndex >= 0) {
-                const elem = lines[lastElemIndex];
+            // const lastElemIndex = lines.length - 1;
+            // if (lastElemIndex >= 0) {
+            //     const elem = lines[lastElemIndex];
+            //     if (elem.length > 32) {
+            //         // 自动换行
+            //         lines.push(elem.substring(32));
+            //         lines[lastElemIndex] = elem.substring(0, 32);
+            //     }
+            // }
+            for (let i = 0, l = lines.length; i < l; ++i) {
+                const elem = lines[i];
                 if (elem.length > 32) {
                     // 自动换行
-                    lines.push(elem.substring(32));
-                    lines[lastElemIndex] = elem.substring(0, 32);
+                    lines.splice(i, 1, elem.substring(0, 32), elem.substring(32));
                 }
             }
             this.data = lines;
