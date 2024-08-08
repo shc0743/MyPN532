@@ -9,7 +9,7 @@
 
 界面*借鉴*了[MCT](https://github.com/ikarus23/MifareClassicTool)，基于web进行开发，前后端基本分离。
 
-# 特性（目前还未完成开发，下面列出的是开发完成后的）
+# 特性
 
 - [x] 读取/写入Mifare Classic (M1卡)
 - [x] 读写Mifare Classic特定扇区
