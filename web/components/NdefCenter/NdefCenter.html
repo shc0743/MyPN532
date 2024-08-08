@@ -65,9 +65,12 @@
                             </template>
 
                             <div style="text-align: center; margin-bottom: 0.5em;">选择标签类型</div>
-                            <ElRadio v-model="write_tagType" value="m1">Mifare Classic S50 1K</ElRadio>
-                            <ElRadio v-model="write_tagType" value="m0">Mifare Ultralight</ElRadio>
-                            <ElRadio v-model="write_tagType" value="m0">Ntag 21x</ElRadio>
+                            <b style="display: block;">注意：禁止用此处生成的转储文件写入到 Ultralight 或 Ntag 标签中，否则文件格式不同，可能导致损坏！</b>
+                            <div style="display: flex; flex-direction: column; align-items: center;">
+                                <ElButton text @click="writeTag({ createOnly: true, type: 'm1' })">Mifare Classic S50 1K</ElButton>
+                                <ElButton text @click="writeTag({ createOnly: true, type: 'm0' })">Mifare Ultralight</ElButton>
+                                <ElButton text @click="writeTag({ createOnly: true, type: 'm0' })">Ntag 21x</ElButton>
+                            </div>
                         </ElPopover>
                     </div>
                     <div style="font-size: small;"><b>* 小提示: </b><span>点击对应记录可以查看详细信息！</span></div>

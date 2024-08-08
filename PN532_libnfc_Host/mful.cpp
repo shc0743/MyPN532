@@ -732,6 +732,12 @@ int nfc_mful(CmdLineW& cl)
 		}
 		if (szDump != iDumpSize) {
 			printf("Performing partial write\n");
+			if (szDump > iDumpSize) {
+				// 可小不可大，防止大聪明往M0里写M1数据
+				ERR("Dump file too large (read %lu, expected %lu)\n", (unsigned long)szDump, (unsigned long)iDumpSize);
+				fclose(pfDump);
+				exit(EXIT_FAILURE);
+			}
 			uiBlocks = uint32_t(szDump / 4);
 		}
 		fclose(pfDump);

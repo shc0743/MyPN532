@@ -1,12 +1,12 @@
 import { getHTML } from '@/assets/js/browser_side-compiler.js';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { ACTION_READ, m1_perform_action } from '../../assets/scripts/m1tag-rw.js';
+import { ACTION_READ, ACTION_WRITE, m1_perform_action } from '../../assets/scripts/m1tag-rw.js';
 import { MoreFilled } from 'icons-vue';
 
 import NdefRecord from '../NdefRecord/NdefRecord.js';
 import { parseTLV } from '../../assets/scripts/parseTLV.js';
 import { hexStringToArrayBuffer } from '../DumpEditor/util.js';
-import { parseNdefObj, unparseNdefObj, text2Payload, uint8tostr, text2Payload_2, text2Payload_utf } from './util.js';
+import { parseNdefObj, unparseNdefObj, text2Payload, uint8tostr, text2Payload_2, text2Payload_utf, getTagBody, packTagPayload_m1, packTagPayload_m0 } from './util.js';
 
 
 const componentId = '97319b12-aad8-47e0-aa58-6cb6460c54d9';
@@ -333,29 +333,132 @@ END:VCARD`;
             if (this.pages[2] > 1) this.pages[2] = 1;
             this.$refs.progDlg.close();
         },
-        writeTag() {
+        packSelf() {
+            const myRecords = [];
+            for (const i of this.writeRecord) {
+                i.getTypeNameFormat = () => i.tnf;
+                const data = parseNdefObj(unparseNdefObj(i));
+                // console.log(data);
+                // const piece = new NdefLibrary.NdefRecord(data.tnf, data.ndef_type);
+                // piece.setPayload(data.payload);
+                const piece = new Ndef.Record(false, data.tnf, data.ndef_type, data.id, new Uint8Array(data.payload));
+                myRecords.push(piece);
+            }
+            const msg = new Ndef.Message(myRecords);//Reflect.construct(NdefLibrary.NdefMessage, myRecords);
+            // console.log(msg);
+            return msg.toByteArray();
+        },
+        writeTag(config) {
             this.pages[1] = 3;
             this.errorText = '';
-            this.$refs.progDlg.showModal();
 
             queueMicrotask(async () => {
                 try {
-                    const taginforesp = await fetch('/api/v4.8/nfc/taginfojson');
-                    if (!taginforesp.ok) throw '无法加载标签信息';
-                    const taginfo = await taginforesp.json();
-                    const m1_sak = ['08', '18'];
-                    const card_type =
-                        m1_sak.includes(taginfo.sak) ? 'm1' :
-                            (taginfo.sak === '00' && taginfo.atqa === '0044') ? 'm0' : null;
-                    if (!card_type) throw '无法确定标签类型（根据SAK值）。\n' + JSON.stringify(taginfo, null, 4);
+                    const cr = !!(config?.createOnly);
+                    const crFile = cr ? ((await ElMessageBox.prompt('请输入文件名：', '创建转储')).value) : null;
+                    this.$refs.progDlg.showModal();
+                    const card_type = (cr) ? config.type : await ((async () => {
+                        const taginforesp = await fetch('/api/v4.8/nfc/taginfojson');
+                        if (!taginforesp.ok) throw '无法加载标签信息';
+                        const taginfo = await taginforesp.json();
+                        const m1_sak = ['08', '18'];
+                        const card_type =
+                            m1_sak.includes(taginfo.sak) ? 'm1' :
+                                (taginfo.sak === '00' && taginfo.atqa === '0044') ? 'm0' : null;
+                        if (!card_type) throw '无法确定标签类型（根据SAK值）。\n' + JSON.stringify(taginfo, null, 4);
+                        return card_type;
+                    })());
 
-                    throw '标签是' + card_type;
+                    switch (card_type) {
+                        case 'm1': {
+                            const packData = new Uint8Array(this.packSelf());
+                            if (!cr) if (packData.length > 720) throw '数据量过大';
+                            const dataToWrite = await packTagPayload_m1(packData, 1024, 4);
+                            // 先保存
+                            const file_name = crFile || '@@TEMP_DATA(临时文件，可放心删除)-用于M1写入-' + (new Date().getTime()) + '.tmp';
+                            const url = new URL('/api/v4.8/api/dumpfile', location.href);
+                            url.searchParams.append('filename', file_name);
+                            const saveresp = await fetch(url, { method: 'PUT', body: (dataToWrite) });
+                            if (!saveresp.ok) throw `文件数据保存失败，错误：HTTP Error ${saveresp.status} ${saveresp.statusText}`;
+                            
+                            // 写入
+                            if (!cr) {
+                                const result = JSON.parse(await m1_perform_action(ACTION_WRITE, {}, () => { }, {
+                                    type: 'write-mfclassic',
+                                    keyfiles: 'std.keys',
+                                    writeB0: false,
+                                    dumpfile: file_name,
+                                }));
+                                if (!result.blocksWritten) throw '写入实质性失败';
+
+                                //清理临时文件
+                                await fetch(url, { method: 'DELETE' });
+                            }
+                            // 写入完成
+                            this.pages[1] = 9999;
+                        }
+                            break;
+                        
+                        case 'm0': {
+                            // M0需要先读出来
+                            //    --> 大型高血压现场...
+                            let readdata;
+                            const url = new URL('/api/v4.8/api/dumpfile', location.href);
+                            if (!cr) {
+                                const taginforesp = await fetch('/api/v4.8/nfc/ultralight/read', {
+                                    method: 'POST'
+                                });
+                                if (!taginforesp.ok) throw `读取失败：HTTP Error ${taginforesp.status}: ${taginforesp.statusText}`;
+                                const dumpfilename = await taginforesp.text();
+                                url.searchParams.set('filename', dumpfilename);
+                                url.searchParams.set('autodump', 'true');
+                                const getresp = await fetch(url);
+                                if (!getresp.ok) throw `读取文件数据失败：HTTP Error ${getresp.status}: ${getresp.statusText}`;
+                                readdata = new Uint8Array(await getresp.arrayBuffer());
+                                await fetch(url, { method: 'DELETE' }); // 清理
+                                if (readdata.byteLength < 0x10) throw '文件数据异常'; // 应该没有容量那么小的标签罢...
+                            } else {
+                                readdata = new Uint8Array((new Array(102400).fill(0)));
+                            }
+                            url.searchParams.delete('autodump');
+
+                            const dataToWrite = await packTagPayload_m0(new Uint8Array(this.packSelf()), readdata, readdata.byteLength);
+                            // 先保存
+                            const file_name = crFile || '@@TEMP_DATA(临时文件，可放心删除)-用于M0写入-' + (new Date().getTime()) + '.tmp';
+                            url.searchParams.set('filename', file_name);
+                            const saveresp = await fetch(url, { method: 'PUT', body: (dataToWrite) });
+                            if (!saveresp.ok) throw `文件数据保存失败，错误：HTTP Error ${saveresp.status} ${saveresp.statusText}`;
+                            
+                            // 写进去
+                            if (!cr) {
+                                const writeresp = await fetch('/api/v4.8/nfc/ultralight/write', {
+                                    method: 'POST',
+                                    body: JSON.stringify({
+                                        file: file_name,
+                                        option: '0000',
+                                        allowResizedWrite: true,
+                                    }),
+                                });
+                                if (!writeresp.ok) throw await writeresp.text();
+                            
+                                //清理临时文件
+                                await fetch(url, { method: 'DELETE' });
+                            }
+                            // 写入完成
+                            this.pages[1] = 9999;
+                        }
+                            break;
                     
-                    // TODO
+                        default:
+                            throw '不支持的标签类型：' + card_type;
+                    }
+                    
                 }
                 catch (error) {
+                    if (!this.$refs.progDlg.open) this.$refs.progDlg.showModal();
                     this.pages[1] = 999;
                     this.errorText = '写入失败! ' + error;
+                    console.error('[ndef]', '[ndef.write]', error);
                 }
             });
         },
@@ -377,13 +480,96 @@ END:VCARD`;
                             (taginfo.sak === '00' && taginfo.atqa === '0044') ? 'm0' : null;
                     if (!card_type) throw '无法确定标签类型（根据SAK值）。\n' + JSON.stringify(taginfo, null, 4);
 
-                    throw '标签是' + card_type;
+                    switch (card_type) {
+                        case 'm1': {
+                            const dataToWrite = await packTagPayload_m1(new Uint8Array(), 1024, 4);
+                            // 先保存
+                            const file_name = '@@TEMP_DATA(临时文件，可放心删除)-用于M1擦除-' + (new Date().getTime()) + '.tmp';
+                            const url = new URL('/api/v4.8/api/dumpfile', location.href);
+                            url.searchParams.append('filename', file_name);
+                            const saveresp = await fetch(url, { method: 'PUT', body: (dataToWrite) });
+                            if (!saveresp.ok) throw `文件数据保存失败，错误：HTTP Error ${saveresp.status} ${saveresp.statusText}`;
+
+                            // 写入
+                            const result = JSON.parse(await m1_perform_action(ACTION_WRITE, {}, () => { }, {
+                                type: 'write-mfclassic',
+                                keyfiles: 'std.keys',
+                                writeB0: false,
+                                dumpfile: file_name,
+                            }));
+                            if (!result.blocksWritten) throw '写入实质性失败';
+
+                            //清理临时文件
+                            await fetch(url, { method: 'DELETE' });
+                            // 写入完成
+                            this.pages[2] = 9999;
+                        }
+                            break;
+                        
+                        case 'm0': {
+                            // M0需要先读出来
+                            let readdata;
+                            const url = new URL('/api/v4.8/api/dumpfile', location.href);
+
+                            const taginforesp = await fetch('/api/v4.8/nfc/ultralight/read', {
+                                method: 'POST'
+                            });
+                            if (!taginforesp.ok) throw `读取失败：HTTP Error ${taginforesp.status}: ${taginforesp.statusText}`;
+                            const dumpfilename = await taginforesp.text();
+                            url.searchParams.set('filename', dumpfilename);
+                            url.searchParams.set('autodump', 'true');
+                            const getresp = await fetch(url);
+                            if (!getresp.ok) throw `读取文件数据失败：HTTP Error ${getresp.status}: ${getresp.statusText}`;
+                            readdata = new Uint8Array(await getresp.arrayBuffer());
+                            await fetch(url, { method: 'DELETE' }); // 清理
+                            if (readdata.byteLength < 0x10) throw '文件数据异常'; // 应该没有容量那么小的标签罢...
+                            url.searchParams.delete('autodump');
+
+                            const card_head = readdata.slice(0, 4 * 4);
+                            const MFUL_PREFILLED = [
+                                0x04, 0x00, 0x00, 0xff, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                            ];
+                            const dataToWrite = erase ? new Uint8Array([
+                                ...card_head,
+                                ...((new Array(readdata.length - card_head.length - MFUL_PREFILLED.length)).fill(0)),
+                                ...MFUL_PREFILLED // 必需数据，防止标签自锁
+                            ]) : await packTagPayload_m0(new Uint8Array((() => {
+                                const rec = new NdefLibrary.NdefRecord();
+                                const msg = new NdefLibrary.NdefMessage(rec);
+                                return new Uint8Array(msg.toByteArray());
+                            })()), readdata, readdata.byteLength);
+                            // 先保存
+                            const file_name = '@@TEMP_DATA(临时文件，可放心删除)-用于M0清除-' + (new Date().getTime()) + '.tmp';
+                            url.searchParams.set('filename', file_name);
+                            const saveresp = await fetch(url, { method: 'PUT', body: (dataToWrite) });
+                            if (!saveresp.ok) throw `文件数据保存失败，错误：HTTP Error ${saveresp.status} ${saveresp.statusText}`;
+
+                            // 写进去
+                            const writeresp = await fetch('/api/v4.8/nfc/ultralight/write', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    file: file_name,
+                                    option: '0000',
+                                    allowResizedWrite: true,
+                                }),
+                            });
+                            if (!writeresp.ok) throw await writeresp.text();
+
+                            //清理临时文件
+                            await fetch(url, { method: 'DELETE' });
+                            // 写入完成
+                            this.pages[2] = 9999;
+                        }
+                            break;
                     
-                    // TODO
+                        default:
+                            break;
+                    }
                 }
                 catch (error) {
                     this.pages[2] = 999;
                     this.errorText = '写入失败! ' + error;
+                    console.error('[ndef]', '[ndef.clear]', error);
                 }
             });
         },
@@ -414,43 +600,5 @@ END:VCARD`;
 
 
 export default data;
-
-
-const CORRECT_M1_NDEF_MAD = [
-    0x14, 0x01, 0x03, 0xe1, 0x03, 0xe1, 0x03, 0xe1, 0x03, 0xe1, 0x03, 0xe1, 0x03, 0xe1, 0x03, 0xe1,
-    0x03, 0xe1, 0x03, 0xe1, 0x03, 0xe1, 0x03, 0xe1, 0x03, 0xe1, 0x03, 0xe1, 0x03, 0xe1, 0x03, 0xe1,
-];
-async function getTagBody(buffer = new ArrayBuffer(), type = '') {
-    if (type === 'm1') {
-        const parts = [];
-        const BLOCK_SIZE = 16;
-        const head = buffer.slice(1 * BLOCK_SIZE, 3 * BLOCK_SIZE);
-        let isNdef = true;
-        if (head.byteLength !== CORRECT_M1_NDEF_MAD.length) isNdef = false;
-        else {
-            const head_u8 = new Uint8Array(head);
-            for (let i = 0, l = head.byteLength; i < l; ++i) {
-                if (head_u8[i] !== CORRECT_M1_NDEF_MAD[i]) {
-                    isNdef = false; break;
-                }
-            }
-        }
-        if (isNdef) {
-            for (let i = 4, l = buffer.byteLength; (i * BLOCK_SIZE) < l; ++i) { // i==0 = uid block 
-                const nStart = i * BLOCK_SIZE, nEnd = (((i + 1) * BLOCK_SIZE) > l) ? undefined : ((i + 1) * BLOCK_SIZE);
-                if ((i + 1) % 4 === 0) continue; // key&acl block
-                parts.push(buffer.slice(nStart, nEnd));
-            }
-        }
-        // debugger; // for M1 card parts.length should be 45 (15*3)
-        return {
-            body: await (new Blob(parts)).arrayBuffer(),
-            head, isNdef,
-        };
-    }
-    if (type === 'm0') {
-        return { body: buffer.slice(4 * 4, buffer.byteLength - (5 * 4)) };
-    }
-}
 
 

@@ -30,7 +30,7 @@ export async function parseTLV(data) {
 
         // read length (1 byte)
         ++i;
-        if (i >= l) throw new TLVRangeException('Data out-of-range, trying to read ' + i + ' in an array contains ' + l);
+        if (i >= l) throw new TLVRangeException('(in parseTLV) Data out-of-range, trying to read ' + i + ' in an array contains ' + l);
         length = data[i];
         if (length === 0xFF) {
             let lengthRealSize = 1;
@@ -51,7 +51,7 @@ export async function parseTLV(data) {
             length = Number(length);
         }
         i += length;
-        if (i + 2 > l) throw new TLVRangeException('Data out-of-range, trying to read ' + i + ' in an array contains ' + l);
+        if (i >= l) throw new TLVRangeException('(in parseTLV) Data out-of-range, trying to read ' + i + ' in an array contains ' + l);
 
         if (byte !== 0x03) continue;
         const block = data.slice(i - length + 1, i + 1);

@@ -122,7 +122,7 @@ const data = {
             try {
                 const resp = await fetch('/api/v4.8/nfc/uid/lock', { method: 'POST' });
                 const text = await resp.text();
-                if (text.includes("后门解锁指令[1/2]: 失败或没有响应")) throw text;
+                if (text.includes("后门解锁指令[1/2]: 失败或没有响应") || text.includes('锁卡初始化指令: 失败或没有响应')) throw text;
                 if (!resp.ok) throw `HTTP Error ${resp.status}: ${resp.statusText}\n\n${text}`;
 
                 this.page = 9999;

@@ -21,6 +21,9 @@
         <div v-deep class="record-type">#{{index + 1}} - Android App</div>
         <div v-deep class="line-view multiple-line-view" v-text="recordData.pkgName"></div>
     </div>
+    <div v-else-if="recordData.type === 'empty'">
+        <div v-deep class="record-type">#{{index + 1}} - 空</div>
+    </div>
     <div v-else-if="recordData.type === 'tel'">
         <div v-deep class="record-type">#{{index + 1}} - 电话号码</div>
         <div v-deep class="line-view multiple-line-view text-view" v-text="recordData.content"></div>
@@ -57,9 +60,6 @@
                 <ElTableColumn prop="10" label="Value 9" width="200" />
             </template>
         </ElTable>
-        <div v-deep class="controls-view">
-            <a v-deep class="record-controls" href="#" @click.prevent.stop="copyText(recordData.mac)" @keyup.stop>复制</a>
-        </div>
     </div>
     <div v-else>
         <div v-deep class="record-type">#{{index + 1}} - 未知</div>

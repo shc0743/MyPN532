@@ -17,6 +17,7 @@ export const error_keywords = {
     'Error: No tag available': '未找到标签，请将标签放在读卡器上',
     'No sector encrypted with the default key has been found, exiting..': '该标签为全加密，没有可用的密钥',
     "ERROR: This card can't do an unlocked ": '该标签不是1代魔术标签(UID卡)，无法使用解锁模式读取，请使用正常方法读取',
+    "Unlock command [1/2]: failed / not acknowledged": '该标签未对解锁指令作出响应，可能不是1代魔术标签(UID卡)，无法使用解锁模式读取，请尝试使用正常方法读取',
     'Error: tag was removed': '标签可能被移走，请重试；若反复出现，则标签控制块可能损坏，如果是UID卡可以重置，其他卡大概率报废',
     'Could not open dump file:': '转储文件不存在，请检查文件可用性；如果尚未保存过此文件（文件后缀是autodump），请先保存一次再继续',
     'Try again, there are still some encrypted blocks': '标签解密失败，请尝试使用mfoc手动增加probes解密',

@@ -445,12 +445,18 @@ write_card(bool unlock, bool write_block_zero)
 			// If we are are writing to a chinese magic card, we've already unlocked
 			// If we're writing to a direct write card, we need to authenticate
 			// If we're writing something else, we'll need to authenticate
-			if ((write_block_zero && dWrite) || (write_block_zero && !unlock) || !write_block_zero || uiBlock > 0) {
+
+			// I dont know what "Direct Write" is, but actually
+			// the expression
+			// (write_block_zero && dWrite) || 
+			// has broken the write of UID (magic card 1), so I removed the code
+			//
+			if ((write_block_zero && !unlock) || !write_block_zero || uiBlock > 0) {
 				constexpr size_t MAX_RETRY_COUNT = 3;
 				for (size_t i = 0; i < MAX_RETRY_COUNT; ++i)
 					if (!authenticate(uiBlock)) {
-						printf("[!Error: authentication failed for block %02x%s] ", uiBlock,
-							i < MAX_RETRY_COUNT ? "Retrying..." : "");
+						printf("[!Error: authentication failed for block %02x%s] \n", uiBlock,
+							i < MAX_RETRY_COUNT ? " Retrying..." : "");
 						if (!bTolerateFailures) return false;
 					}
 			}
