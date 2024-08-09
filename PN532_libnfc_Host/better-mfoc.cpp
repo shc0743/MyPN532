@@ -519,7 +519,13 @@ int nfc_bettermfoc(CmdLineW & cl) {
       {0xd3, 0xf7, 0xd3, 0xf7, 0xd3, 0xf7}, // NFCForum content key
       {0x00, 0x00, 0x00, 0x00, 0x00, 0x00}, // Blank key
     };
-    struct MyKey { uint8_t value[6]; };
+    class MyKey {
+    public:
+        uint8_t value[6];
+        bool operator==(const MyKey& b) const {
+            return 0 == memcmp(this->value, b.value, 6);
+        };
+    };
     vector<MyKey> user_keys;
 
     bool useDumpSectors = false;
@@ -602,6 +608,11 @@ int nfc_bettermfoc(CmdLineW & cl) {
             }
         }
         fprintf(stdout, "%i custom keys has been added to the default keys\n", (int)count);
+
+        // ШЅжи
+        auto lastUnique = std::unique(user_keys.begin(), user_keys.end());
+        user_keys.erase(lastUnique, user_keys.end());
+        fprintf(stdout, "%i valid custom keys is in the default keys\n", (int)user_keys.size());
     }
     wstring outfile; cl.getopt(L"O", outfile);
     if (!outfile.empty()) {
@@ -1427,6 +1438,7 @@ static int mf_enhanced_auth(int e_sector, int a_sector, mftag t, mfreader r, den
 
     if (nfc_initiator_transceive_bytes(r.pdi, Auth, 4, Rx, sizeof(Rx), 0) < 0) {
         fprintf(stdout, "Error while requesting plain tag-nonce\n");
+        nfc_perror(r.pdi, "nfc_initiator_transceive_bytes");
         exit(EXIT_FAILURE);
     }
 
