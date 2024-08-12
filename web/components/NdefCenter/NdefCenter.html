@@ -93,7 +93,7 @@
             <div v-if="currentTab === 'more'">
                 <div v-deep class="input-area"><ElButton style="flex: 1;" @click="clearTag(0)">清空标签</ElButton></div>
                 <div v-deep class="input-area"><ElButton style="flex: 1;" @click="clearTag(1)">格式化标签</ElButton></div>
-                <div v-deep class="input-area"><ElButton style="flex: 1;" @click="nop">锁定标签</ElButton></div>
+                <div v-deep class="input-area"><ElButton style="flex: 1;" @click="lockTag">锁定标签</ElButton></div>
                 <!-- <div v-deep class="input-area"><ElButton style="flex: 1;" @click="nop">设置密码</ElButton></div>
                 <div v-deep class="input-area"><ElButton style="flex: 1;" @click="nop">删除密码</ElButton></div> -->
             </div>
@@ -116,7 +116,7 @@
                 <ElButton type="danger" size="large" plain @click="doneWriteOperation">关闭</ElButton>
                 <details style="margin-top: 0.5em;">
                     <summary>详细信息</summary>
-                    <div v-text="errorText" style="border: 1px solid gray; border-radius: 10px; margin-top: 0.5em; padding: 0.5em;"></div>
+                    <div v-text="errorText" style="border: 1px solid gray; border-radius: 10px; margin-top: 0.5em; padding: 0.5em; white-space: pre;"></div>
                 </details>
             </div>
         </dialog>

@@ -205,7 +205,7 @@ const data = {
                     return;
                 }
 
-                this.$nextTick(() => this.$refs.myEditor.load());
+                this.$nextTick(() => this.$refs.myEditor?.load?.());
 
             } catch (error) {
                 ElMessageBox.alert(error, '文件加载失败', {

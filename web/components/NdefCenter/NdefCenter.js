@@ -386,7 +386,6 @@ END:VCARD`;
                             if (!cr) {
                                 const result = JSON.parse(await m1_perform_action(ACTION_WRITE, {}, () => { }, {
                                     type: 'write-mfclassic',
-                                    keyfiles: 'std.keys',
                                     writeB0: false,
                                     dumpfile: file_name,
                                 }));
@@ -483,6 +482,15 @@ END:VCARD`;
 
                     switch (card_type) {
                         case 'm1': {
+                            if (erase) {
+                                const result = JSON.parse(await m1_perform_action(ACTION_WRITE, {}, () => { }, {
+                                    type: 'format-mfclassic',
+                                }));
+                                if (!result.blocksWritten) throw '写入实质性失败';
+                                // 写入完成
+                                this.pages[2] = 9999;
+                                break;
+                            }
                             const dataToWrite = await packTagPayload_m1(new Uint8Array(), 1024, 4);
                             // 先保存
                             const file_name = '@@TEMP_DATA(临时文件，可放心删除)-用于M1擦除-' + (new Date().getTime()) + '.tmp';
@@ -494,7 +502,6 @@ END:VCARD`;
                             // 写入
                             const result = JSON.parse(await m1_perform_action(ACTION_WRITE, {}, () => { }, {
                                 type: 'write-mfclassic',
-                                keyfiles: 'std.keys',
                                 writeB0: false,
                                 dumpfile: file_name,
                             }));
@@ -527,13 +534,14 @@ END:VCARD`;
                             url.searchParams.delete('autodump');
 
                             const card_head = readdata.slice(0, 4 * 4);
-                            const MFUL_PREFILLED = [
-                                0x04, 0x00, 0x00, 0xff, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                            ];
+                            const card_tail = readdata.slice(readdata.length - 20); // CFG、PWD、DYNLOCK等块
+                            // const MFUL_PREFILLED = [
+                            //     0x04, 0x00, 0x00, 0xff, 0x00, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                            // ];
                             const dataToWrite = erase ? new Uint8Array([
                                 ...card_head,
                                 ...((new Array(readdata.length - card_head.length - MFUL_PREFILLED.length)).fill(0)),
-                                ...MFUL_PREFILLED // 必需数据，防止标签自锁
+                                ...card_tail//MFUL_PREFILLED // 必需数据，防止标签自锁 (废了个ntag后的惨痛教训。。。)
                             ]) : await packTagPayload_m0(new Uint8Array((() => {
                                 const rec = new NdefLibrary.NdefRecord();
                                 const msg = new NdefLibrary.NdefMessage(rec);
@@ -564,13 +572,115 @@ END:VCARD`;
                             break;
                     
                         default:
-                            break;
+                            throw '无法处理的标签类型';
                     }
                 }
                 catch (error) {
                     this.pages[2] = 999;
                     this.errorText = '写入失败! ' + error;
                     console.error('[ndef]', '[ndef.clear]', error);
+                }
+            });
+        },
+        async lockTag() {
+            try { await ElMessageBox.confirm('确定执行此操作？注意：执行此操作后无法撤销！！', '锁定标签', { type: 'warning', confirmButtonText: '执行', cancelButtonText: '不执行' }) } catch { return }
+
+            this.pages[2] = 3;
+            this.errorText = '';
+            this.$refs.progDlg.showModal();
+
+            queueMicrotask(async () => {
+                try {
+                    const taginforesp = await fetch('/api/v4.8/nfc/taginfojson');
+                    if (!taginforesp.ok) throw '无法加载标签信息';
+                    const taginfo = await taginforesp.json();
+                    const m1_sak = ['08', '18'];
+                    const card_type =
+                        m1_sak.includes(taginfo.sak) ? 'm1' :
+                            (taginfo.sak === '00' && taginfo.atqa === '0044') ? 'm0' : null;
+                    if (!card_type) throw '无法确定标签类型（根据SAK值）。\n' + JSON.stringify(taginfo, null, 4);
+
+                    switch (card_type) {
+                        case 'm0': {
+                            // M0需要先读出来
+                            let readdata;
+                            const url = new URL('/api/v4.8/api/dumpfile', location.href);
+
+                            const taginforesp = await fetch('/api/v4.8/nfc/ultralight/read', {
+                                method: 'POST'
+                            });
+                            if (!taginforesp.ok) throw `读取失败：HTTP Error ${taginforesp.status}: ${taginforesp.statusText}`;
+                            const dumpfilename = await taginforesp.text();
+                            url.searchParams.set('filename', dumpfilename);
+                            url.searchParams.set('autodump', 'true');
+                            const getresp = await fetch(url);
+                            if (!getresp.ok) throw `读取文件数据失败：HTTP Error ${getresp.status}: ${getresp.statusText}`;
+                            readdata = new Uint8Array(await getresp.arrayBuffer());
+                            await fetch(url, { method: 'DELETE' }); // 清理
+                            if (readdata.byteLength < 0x10) throw '文件数据异常'; // 应该没有容量那么小的标签罢...
+                            url.searchParams.delete('autodump');
+
+                            // 写锁定字节
+                            const type = readdata[14];
+                            switch (type) {
+                                case 0x12: {
+                                    readdata[readdata.byteLength - 19] = 0b00001111;
+                                    readdata[readdata.byteLength - 18] = 0b00111111;
+                                }
+                                    break;
+                                case 0x3e: {
+                                    readdata[readdata.byteLength - 19] = 0x00;
+                                    readdata[readdata.byteLength - 18] = 0b00001111;
+                                }
+                                    break;
+                                case 0x6d: {
+                                    readdata[readdata.byteLength - 19] = 0b00001111;
+                                    readdata[readdata.byteLength - 18] = 0b01111111;
+                                }
+                                    break;
+                                default:
+                                    throw '标签非NTag213/215/216，咱也不知道咋写...';
+                            }
+                            readdata[10] = readdata[11] = 0xFF; // Lock bytes
+                            readdata[readdata.byteLength - 20] = 0xFF; // dynlock
+                            readdata[readdata.byteLength - 17] = 0x00; // RFUI
+                            // 写 dynamic lock 时RFUI要写0 https://www.nxp.com.cn/docs/zh/data-sheet/NTAG213_215_216.pdf Section 8.5.3
+                            readdata[readdata.byteLength - 12] = 0b01000000; // ACCESS
+                            readdata[readdata.byteLength - 11] = readdata[readdata.byteLength - 10] = readdata[readdata.byteLength - 9] = readdata[readdata.byteLength - 1] = 0x00; // RFUI
+
+                            const dataToWrite = new Uint8Array(readdata);
+                            // 先保存
+                            const file_name = '@@TEMP_DATA(临时文件，可放心删除)-用于M0锁定-' + (new Date().getTime()) + '.tmp';
+                            url.searchParams.set('filename', file_name);
+                            const saveresp = await fetch(url, { method: 'PUT', body: (dataToWrite) });
+                            if (!saveresp.ok) throw `文件数据保存失败，错误：HTTP Error ${saveresp.status} ${saveresp.statusText}`;
+
+                            // 写进去
+                            const writeresp = await fetch('/api/v4.8/nfc/ultralight/write', {
+                                method: 'POST',
+                                body: JSON.stringify({
+                                    file: file_name,
+                                    option: '0000',
+                                    allowResizedWrite: true,
+                                }),
+                            });
+                            if (!writeresp.ok) throw await writeresp.text();
+
+                            //清理临时文件
+                            await fetch(url, { method: 'DELETE' });
+                            // 写入完成
+                            this.pages[2] = 9999;
+                        }
+                            break;
+                    
+                        default:
+                            throw '无法处理的标签类型';
+                    }
+                }
+                catch (error) {
+                    this.pages[2] = 999;
+                    this.errorText = '执行失败! ' + error;
+                    console.error('[ndef]', '[ndef.lock]', error);
                 }
             });
         },
