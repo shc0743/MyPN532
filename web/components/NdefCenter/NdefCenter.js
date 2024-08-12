@@ -332,6 +332,7 @@ END:VCARD`;
             if (this.pages[1] > 1) this.pages[1] = 1;
             if (this.pages[2] > 1) this.pages[2] = 1;
             this.$refs.progDlg.close();
+            this.errorText = '';
         },
         packSelf() {
             const myRecords = [];

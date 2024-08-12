@@ -46,6 +46,7 @@
 #include "mfoc-codes/crapto1.h"
 #include "../../resource/tool.h"
 #include <set>
+#include <unordered_set>
 using namespace std;
 
 #pragma region mifare.h
@@ -580,6 +581,7 @@ int nfc_bettermfoc(CmdLineW & cl) {
             exit(EXIT_FAILURE);
         }
         size_t count = 0;
+        unordered_set<ULONGLONG> rdkey; // remove duplicate
         while ((read = fgets(line, sizeof(line), fp)) != NULL) {
             int i, j = 0, str_len = (int)strlen(line);
             while (j < str_len &&
@@ -598,8 +600,12 @@ int nfc_bettermfoc(CmdLineW & cl) {
                 defKeys_len = defKeys_len + 6;
 #else
                 MyKey mkey{};
-                num_to_bytes(strtoll(caps[0].ptr, NULL, 16), 6, mkey.value);
-                user_keys.push_back(mkey);
+                ULONGLONG num = strtoll(caps[0].ptr, NULL, 16);
+                if (!rdkey.contains(num)) {
+                    num_to_bytes(num, 6, mkey.value);
+                    rdkey.emplace(num);
+                    user_keys.push_back(mkey);
+                }
 
 #endif
                 ++count;
@@ -609,9 +615,6 @@ int nfc_bettermfoc(CmdLineW & cl) {
         }
         fprintf(stdout, "%i custom keys has been added to the default keys\n", (int)count);
 
-        // ШЅжи
-        auto lastUnique = std::unique(user_keys.begin(), user_keys.end());
-        user_keys.erase(lastUnique, user_keys.end());
         fprintf(stdout, "%i valid custom keys is in the default keys\n", (int)user_keys.size());
     }
     wstring outfile; cl.getopt(L"O", outfile);
