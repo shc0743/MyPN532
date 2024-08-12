@@ -4,7 +4,8 @@
         <form action="#" @submit.prevent="selectit">
             <ElCard>
                 <template #header>
-                    选择密钥文件
+                    <span>选择密钥文件</span>
+                    <span v-if="!required" style="margin-left: 0.5em;">(可选)</span>
                 </template>
 
                 <ElCheckbox v-model="keyfileSelectAll" label="全选" :disabled="!canContinue"></ElCheckbox>

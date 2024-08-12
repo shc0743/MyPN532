@@ -264,12 +264,7 @@ static void wsProcessMessage(const WebSocketConnectionPtr& wsConnPtr, std::strin
 				sectors = ConvertUTF8ToUTF16(json["sectors"].asString());
 			}
 			
-			if (sz_keyfiles.empty() && !unlock) {
-				val["code"] = 400;
-				val["error"] = ccs8("需要指定keyfile");
-				wsSessionSessionEnd(sessionId);
-			}
-			else if (type != "format-mfclassic" && (sz_dumpfile.empty() && sz_dumpdata.empty())) {
+			if (type != "format-mfclassic" && (sz_dumpfile.empty() && sz_dumpdata.empty())) {
 				val["code"] = 400;
 				val["error"] = ccs8("需要指定dump，可以选择dumpfile或base64的dumpdata");
 				wsSessionSessionEnd(sessionId);
@@ -1295,11 +1290,6 @@ DWORD __stdcall wsNativeWriteNfcMfClassic(PVOID pConnInfo) {
 	}
 
 	auto& keyfiles = data->keyfiles;
-	if (keyfiles.empty() && !data->unlock) {
-		ptr->send(ccs8("{\"type\":\"error-ui\",\"error\":\"需要keyfile\",\"modal\":true}"));
-		wsSessionSessionEnd(sessionId);
-		return -1;
-	}
 
 	bool unlock = data->unlock;
 

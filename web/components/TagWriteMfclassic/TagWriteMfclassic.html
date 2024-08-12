@@ -3,7 +3,7 @@
     <style>[inert]>>>{opacity: 0.5;}</style>
     <ActivityBody style="display: flex; flex-direction: column;">
         <dialog v-deep  @cancel.prevent @keydown.esc.prevent class="my-select-dialog" ref="keySelector">
-            <KeyReflect @selected="work" />
+            <KeyReflect @selected="work" :required="false" />
         </dialog>
         <dialog v-deep style="padding: 0; min-width: 50%;" @cancel.prevent @keydown.esc.prevent ref="sectorSelector">
             <ActivityView>
