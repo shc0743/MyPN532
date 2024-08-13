@@ -1,4 +1,22 @@
-import { formatHexFromUint8ArrayBeautifully } from "../DumpEditor/util.js";
+import { formatHexFromUint8Array, formatHexFromUint8ArrayBeautifully } from "../DumpEditor/util.js";
+
+
+export const Ndef_WiFi_Data = {
+    auth: {
+        [0x0001]: 'Open',
+        [0x0002]: 'WPA-Personal',
+        [0x0004]: 'Shared',
+        [0x0008]: 'WPA-Enterprise',
+        [0x0010]: 'WPA2-Enterprise',
+        [0x0020]: 'WPA2-Personal'
+    },
+    encryption: {
+        [0x0001]: 'None',
+        [0x0002]: 'WEP',
+        [0x0004]: 'TKIP',
+        [0x0008]: 'AES',
+    },
+};
 
 
 export function parseNdefObj(i) {
@@ -32,6 +50,46 @@ export function parseNdefObj(i) {
             _data = Object.assign(parseVCard(str), {
                 type: 'person',
             });
+        }
+        if (typestr === 'application/vnd.wfa.wsc') {
+            _data = { type: 'wifi' };
+            const pl = new Uint8Array(i.getPayload());
+            if (pl[0] == 0x10 && pl[1] == 0x0e) try {
+                for (let i = 0, l = pl.byteLength; i < l; ) {
+                    const header = pl[i];
+                    if (header !== 0x10) break;
+                    const type = pl[i + 1];
+                    if (type === 0x0e) { i += 4; continue; }
+                    const length = ((pl[i + 2]) << 8) | (pl[i + 3]);
+                    const data = pl.slice(i + 4, i + 4 + length);
+                    const dataMerged = (data[0] << 8) | (data[1]);
+                    i += 4 + length;
+                    switch (type) {
+                        case 0x26: break; // wifi id
+                        case 0x20: break; // wifi mac
+                        case 0x45: // ssid
+                            _data.ssid = uint8tostr(data);
+                            break;
+                        case 0x27: // pswd
+                            _data.password = uint8tostr(data);
+                            break;
+                        case 0x03: // auth type
+                            _data.auth = Ndef_WiFi_Data.auth[dataMerged];
+                            _data.authRaw = dataMerged;
+                            break;
+                        case 0x0f: // enc type
+                            _data.enc = Ndef_WiFi_Data.encryption[dataMerged];
+                            _data.encRaw = dataMerged;
+                            break;
+                        default:
+                            _data['Unknown' + type] = formatHexFromUint8ArrayBeautifully(data);
+                            break;
+                    }
+                }
+            }
+            catch (error) {
+                _data.failure = String(error);
+            }
         }
     }
     else if (tnf === 4) {

@@ -303,6 +303,17 @@ END:VCARD`;
                         })));
                         break;
                     }
+                    case 'wifi': {
+                        this.writeRecord.push(parseNdefObj(unparseNdefObj({
+                            ndef_type: text2Payload_2('application/vnd.wfa.wsc'),
+                            tnf: 2, payload: new Uint8Array([
+                                0x10, 0x0e, 0x00, 0x00,
+                                0x10, 0x26, 0x00, 0x01, 0x01,
+                            ]),
+                        })));
+                        ElMessageBox.alert('请点击对应记录条目以编辑WiFi信息！');
+                        break;
+                    }
                     case 'custom':
                     {
                         const newLength = this.writeRecord.push(Object.assign({
@@ -540,7 +551,7 @@ END:VCARD`;
                             // ];
                             const dataToWrite = erase ? new Uint8Array([
                                 ...card_head,
-                                ...((new Array(readdata.length - card_head.length - MFUL_PREFILLED.length)).fill(0)),
+                                ...((new Array(readdata.length - card_head.length - card_tail.length)).fill(0)),
                                 ...card_tail//MFUL_PREFILLED // 必需数据，防止标签自锁 (废了个ntag后的惨痛教训。。。)
                             ]) : await packTagPayload_m0(new Uint8Array((() => {
                                 const rec = new NdefLibrary.NdefRecord();
@@ -660,7 +671,7 @@ END:VCARD`;
                                 method: 'POST',
                                 body: JSON.stringify({
                                     file: file_name,
-                                    option: '0000',
+                                    option: '0110',
                                     allowResizedWrite: true,
                                 }),
                             });

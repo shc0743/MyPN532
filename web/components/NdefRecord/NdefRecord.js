@@ -2,7 +2,7 @@ import { getHTML, getVdeep } from '@/assets/js/browser_side-compiler.js';
 import { addCSS } from '@/BindMove.js';
 import { formatHexFromUint8ArrayBeautifully, hexStringToArrayBuffer } from '../DumpEditor/util.js';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import { parseNdefObj, unparseNdefObj, text2Payload, uint8tostr, text2Payload_2, text2Payload_utf } from '../NdefCenter/util.js';
+import { parseNdefObj, unparseNdefObj, text2Payload, uint8tostr, text2Payload_2, text2Payload_utf, Ndef_WiFi_Data } from '../NdefCenter/util.js';
 
 const componentId = 'a4bb662d-cd6f-45ab-8ab4-d8292c83f419';
 
@@ -20,6 +20,8 @@ const data = {
             vCard_showMoreValues: false,
             showPersonViewer: false,
             vCard_EditTemp: {},
+            showWifiViewer: false,
+            Wifi_EditTemp: {},
         }
     },
 
@@ -89,6 +91,12 @@ const data = {
                         this.showPersonViewer = false;
                     }));
                 }
+                if (options?.is === 'wifi-viewer') {
+                    this.$refs.WifiViewer.close();
+                    return this.$nextTick(() => this.$nextTick(() => {
+                        this.showWifiViewer = false;
+                    }));
+                }
                 this.$refs.dataViewer.close();
                 this.$nextTick(() => this.$nextTick(() => {
                     this.showDataViewer = false;
@@ -151,6 +159,14 @@ const data = {
                         this.$refs.PersonViewer.showModal();
                     }));
                     break;
+                case 'wifi':
+                    this.dataType = 'application/vnd.wfa.wsc';
+                    this.Wifi_EditTemp = notdeepclone(this.recordData);
+                    this.showWifiViewer = true;
+                    this.$nextTick(() => this.$nextTick(() => {
+                        this.$refs.WifiViewer.showModal();
+                    }));
+                    break;
             
                 default:
                     this.viewData(data.payload);
@@ -178,6 +194,13 @@ const data = {
             } catch (error) {
                 ElMessage.error('无法打开这个 ' + ur + ': ' + error);
             }
+        },
+        getWifiAttr(k) {
+            const r = [];
+            for (const i of Reflect.ownKeys(Ndef_WiFi_Data[k])) {
+                r.push({ key: i, value: Ndef_WiFi_Data[k][i] });
+            }
+            return r;
         },
         async saveData(options = {}) {
             if (this.isReadOnly) return (this.dataEditorError = '无法保存只读文件');
@@ -227,7 +250,7 @@ const data = {
                         data.mac = value;
                         data.payload = hexStringToArrayBuffer(value.replace(/[:：]/gm, ''));
                         break;
-                    case 'person':console.log(data);
+                    case 'person':
                         data.content = `BEGIN:VCARD
 VERSION:3.0
 FN:${this.vCard_EditTemp.name}
@@ -238,6 +261,37 @@ EMAIL:${this.vCard_EditTemp.email}
 URL:${this.vCard_EditTemp.website}
 END:VCARD`;
                         data.payload = text2Payload_utf(data.content);
+                        break;
+                    case 'wifi': {
+                        const r = [0x10, 0x0e];
+                        const p = [];
+                        const HIWORD = v => (v & 0xff00) >> 8;
+                        const LOWORD = v => v & 0x00ff;
+                        p.push(0x10, 0x26, 0x00, 0x01, 0x01);
+
+                        const ssid = this.Wifi_EditTemp.ssid;
+                        p.push(0x10, 0x45, HIWORD(ssid.length), LOWORD(ssid.length));
+                        p.push(...text2Payload_utf(ssid));
+
+                        const auth = +this.Wifi_EditTemp.authRaw;
+                        p.push(0x10, 0x03, 0x00, 0x02, HIWORD(auth), LOWORD(auth));
+
+                        const enc = +this.Wifi_EditTemp.encRaw;
+                        p.push(0x10, 0x0F, 0x00, 0x02, HIWORD(enc), LOWORD(enc));
+
+                        if (auth !== 1 && enc !== 1) {
+                            const password = this.Wifi_EditTemp.password;
+                            p.push(0x10, 0x27, HIWORD(password.length), LOWORD(password.length));
+                            p.push(...text2Payload_utf(password));
+                        }
+
+                        p.push(0x10, 0x20, 0x00, 0x06, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff);
+
+                        r.push(HIWORD(p.length), LOWORD(p.length));
+                        
+                        const u8 = new Uint8Array([...r, ...p]);
+                        data.payload = u8;
+                    }
                         break;
             
                     default: try {

@@ -42,6 +42,28 @@
             <a v-deep class="record-controls" href="#" @click.prevent.stop="copyText(recordData.mac)" @keyup.stop>复制</a>
         </div>
     </div>
+    <div v-else-if="recordData.type === 'wifi'">
+        <div v-deep class="record-type">#{{index + 1}} - Wi-Fi</div>
+        <div v-deep class="line-view single-line-view" v-if="!recordData.ssid">
+            <b style="color: red;">记录无效</b>
+        </div>
+        <div v-deep class="line-view single-line-view">
+            <span>SSID:&nbsp;</span>
+            <span v-text="recordData.ssid"></span>
+        </div>
+        <div v-deep class="line-view single-line-view" v-if="recordData.password">
+            <span>密码:&nbsp;</span>
+            <span v-text="recordData.password"></span>
+        </div>
+        <div v-deep class="line-view single-line-view">
+            <span>身份验证:&nbsp;</span>
+            <span v-text="recordData.auth"></span>
+        </div>
+        <div v-deep class="line-view single-line-view">
+            <span>加密方式:&nbsp;</span>
+            <span v-text="recordData.enc"></span>
+        </div>
+    </div>
     <div v-else-if="recordData.type === 'person'">
         <div v-deep class="record-type">#{{index + 1}} - 联系人</div>
         <div v-deep class="line-view single-line-view" @click.stop><ElCheckbox v-model="vCard_showMoreValues">显示更多值</ElCheckbox></div>
@@ -91,12 +113,12 @@
         border-color: #ccc;
         width: 100%; height: 100%;
         left: 0; top: 0;
-    }.person-viewer-line>>>{
+    }.text-data-viewer-line>>>{
         display: flex; align-items: center;
-    }.person-viewer-line[v-deep]>*:nth-last-child(1){
+    }.text-data-viewer-line[v-deep]>*:nth-last-child(1){
         margin-left: 0.5em;
         flex: 1;
-    }.person-viewer-line[v-deep]+.person-viewer-line>>>{
+    }.text-data-viewer-line[v-deep]+.text-data-viewer-line>>>{
         margin-top: 0.5em;
     }</style>
     <dialog v-if="showDataViewer" ref="dataViewer" v-deep @click.stop @cancel.prevent="viewData(null, false, true)">
@@ -119,29 +141,29 @@
         </div>
     </dialog>
 
-    <dialog v-if="showPersonViewer" ref="PersonViewer" v-deep @click.stop @cancel.prevent="viewData(null, false, true)">
+    <dialog v-if="showPersonViewer" ref="PersonViewer" v-deep @click.stop @cancel.prevent="viewData(null, false, true, { is: 'person-viewer' })">
         <div style="display: flex; flex-direction: column; flex: 1; overflow: auto;">
-            <div v-deep class="person-viewer-line">
+            <div v-deep class="text-data-viewer-line">
                 <span>姓名:</span>
                 <ElInput v-model="vCard_EditTemp.name" />
             </div>
-            <div v-deep class="person-viewer-line">
+            <div v-deep class="text-data-viewer-line">
                 <span>公司:</span>
                 <ElInput v-model="vCard_EditTemp.org" />
             </div>
-            <div v-deep class="person-viewer-line">
+            <div v-deep class="text-data-viewer-line">
                 <span>地址:</span>
                 <ElInput v-model="vCard_EditTemp.addr" />
             </div>
-            <div v-deep class="person-viewer-line">
+            <div v-deep class="text-data-viewer-line">
                 <span>电话:</span>
                 <ElInput v-model="vCard_EditTemp.tel" />
             </div>
-            <div v-deep class="person-viewer-line">
+            <div v-deep class="text-data-viewer-line">
                 <span>电子邮件地址:</span>
                 <ElInput v-model="vCard_EditTemp.email" />
             </div>
-            <div v-deep class="person-viewer-line">
+            <div v-deep class="text-data-viewer-line">
                 <span>网站:</span>
                 <ElInput v-model="vCard_EditTemp.website" />
             </div>
@@ -149,6 +171,35 @@
         <div style="display: flex;">
             <ElButton style="flex: 1;" @click="saveData({ is: 'person-viewer' })" type="primary" plain :disabled="isReadOnly">保存</ElButton>
             <ElButton style="flex: 1;" @click="viewData(null, false, true, { is: 'person-viewer' })" type="danger" plain>关闭</ElButton>
+        </div>
+    </dialog>
+
+    <dialog v-if="showWifiViewer" ref="WifiViewer" v-deep @click.stop @cancel.prevent="viewData(null, false, true, { is: 'wifi-viewer' })">
+        <div style="display: flex; flex-direction: column; flex: 1; overflow: auto;">
+            <div v-deep class="text-data-viewer-line">
+                <span>SSID:</span>
+                <ElInput v-model="Wifi_EditTemp.ssid" />
+            </div>
+            <div v-deep class="text-data-viewer-line">
+                <span>身份验证:</span>
+                <select style="border: 1px solid #ccc; padding: 0.5em;" v-model="Wifi_EditTemp.authRaw">
+                    <option v-for="i in (getWifiAttr('auth'))" :value="i.key" v-text="i.value"></option>
+                </select>
+            </div>
+            <div v-deep class="text-data-viewer-line" v-if="Wifi_EditTemp.authRaw != 1">
+                <span>加密方式:</span>
+                <select style="border: 1px solid #ccc; padding: 0.5em;" v-model="Wifi_EditTemp.encRaw">
+                    <option v-for="i in (getWifiAttr('encryption'))" :value="i.key" v-text="i.value"></option>
+                </select>
+            </div>
+            <div v-deep class="text-data-viewer-line" v-if="Wifi_EditTemp.authRaw != 1 && Wifi_EditTemp.encRaw != 1">
+                <span>密码:</span>
+                <ElInput v-model="Wifi_EditTemp.password" />
+            </div>
+        </div>
+        <div style="display: flex;">
+            <ElButton style="flex: 1;" @click="saveData({ is: 'wifi-viewer' })" type="primary" plain :disabled="isReadOnly">保存</ElButton>
+            <ElButton style="flex: 1;" @click="viewData(null, false, true, { is: 'wifi-viewer' })" type="danger" plain>关闭</ElButton>
         </div>
     </dialog>
 </div>
