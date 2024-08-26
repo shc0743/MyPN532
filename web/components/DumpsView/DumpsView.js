@@ -9,11 +9,12 @@ const data = {
         return {
             canContinue: false,
             dumpfiles: [],
+            dumpfilesWithFilter: [],
             dumpfile: [],
             dumpfileSelectAll: false,
             compare: Symbol(),
             dumpfileShowAutodump: false,
-
+            filterValue: '',
         }
     },
 
@@ -40,6 +41,8 @@ const data = {
                 for (const i of data) {
                     this.dumpfiles.push(i);
                 }
+                this.dumpfilesWithFilter = this.dumpfiles;
+                this.filterValue = '';
                 this.canContinue = true;
             });
         },
@@ -74,13 +77,13 @@ const data = {
             if (this.dumpfile.length < 1 && !this.dumpfileSelectAll) {
                 return ElMessage.error('必须选择转储文件')
             }
-            ElMessageBox.confirm('确认删除选择的 ' + (this.dumpfileSelectAll ? this.dumpfiles.length : this.dumpfile.length) + ' 个转储文件? 此操作无法撤销。', '删除转储文件', {
+            ElMessageBox.confirm('确认删除选择的 ' + (this.dumpfileSelectAll ? this.dumpfilesWithFilter.length : this.dumpfile.length) + ' 个转储文件? 此操作无法撤销。', '删除转储文件', {
                 type: 'error',
                 confirmButtonText: '删除',
                 cancelButtonText: '不删除',
             }).then(async () => {
                 try {
-                    const files = this.dumpfileSelectAll ? this.dumpfiles : this.dumpfile;
+                    const files = this.dumpfileSelectAll ? this.dumpfilesWithFilter : this.dumpfile;
                     for (const i of files) {
                         const url = new URL('/api/v4.8/api/dumpfile', location.href);
                         url.searchParams.append('filename', i);
@@ -124,12 +127,21 @@ const data = {
                 ElMessage.error('处理失败:' + err);
             }
         },
+        applyFilter(apply = true) {
+            if (!apply) { this.dumpfilesWithFilter = this.dumpfiles; return; }
+            const key = this.filterValue;
+            this.dumpfilesWithFilter = this.dumpfiles.filter(el => el.includes(key));
+        },
 
     },
 
     watch: {
         dumpfileShowAutodump() {
             this.userLoadData();
+        },
+        filterValue(value) {
+            if (value) this.applyFilter(true);
+            else if (this.dumpfiles?.length !== this.dumpfilesWithFilter.length) this.applyFilter(false);
         },
     },
 
