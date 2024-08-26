@@ -22,7 +22,7 @@
                 <a href="#" style="margin-left: 1em;" @click.prevent="editDeviceName" v-deep class="edit-device-name">改名</a>
                 <a href="#" style="margin-left: 1em;" @click.prevent="setDefaultDevice(null)">清除</a>
             </div>
-            <div><b>设备列表:&nbsp;</b><a v-deep class="scan-device" href="#" @click.prevent="loadDevList" :inert="showDeviceTour">扫描设备</a></div>
+            <div><b>设备列表:&nbsp;</b><a v-deep class="scan-device" href="#" @click.prevent="loadDevList" :inert="showDeviceTour && nfcDevicesComputed.length">扫描设备</a></div>
             <ElTree v-deep class="device-tree" :data="nfcDevicesComputed" :props="defaultProps">
                 <template #default="{ node, data }">
                     <span class="custom-tree-node" v-deep>
@@ -35,6 +35,26 @@
                 </template>
                 <template #empty>点击「扫描设备」以加载设备列表</template>
             </ElTree>
+            <details style="margin-top: 0.5em;">
+                <summary>常见问题 （点击展开）</summary>
+                <ol>
+                    <li>
+                        <div><b>Q: </b>如何设置NFC设备？</div>
+                        <div><b>A: </b><a href="#" @click.prevent="showDeviceTour = true">点击查看引导</a></div>
+                    </li>
+                    <li>
+                        <div><b>Q: </b>为什么插入设备后，仍然无法识别设备？</div>
+                        <div><b>A: </b>请依次排查以下方面：</div>
+                        <ul>
+                            <li>如果是第一次使用，设备是否安装了驱动？</li>
+                            <li>对于PN532设备，驱动<a href="https://www.wch.cn/downloads/CH341SER_EXE.html" target="_blank">可以在这里下载</a>；</li>
+                            <li>对于其他设备，请根据设备型号自行搜索。</li>
+                            <li>另外，请检查设备是否被其他程序占用；</li>
+                            <li>如果始终无法识别，请<a href="https://github.com/shc0743/MyPN532/issues" target="_blank">提供反馈</a>。</li>
+                        </ul>
+                    </li>
+                </ol>
+            </details>
             <ElTour v-if="showDeviceTour" v-model="showDeviceTour">
                 <ElTourStep title="设置 NFC 设备" :next-button-props="{children:'继续'}">
                     <div style="font-weight: bold; margin-bottom: 0.5em; text-align: center; font-size: x-large;">欢迎设置 NFC 设备！</div>
@@ -42,7 +62,7 @@
                 </ElTourStep>
                 <ElTourStep target=".scan-device>>>" title="设置 NFC 设备" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
                     <div style="font-weight: bold; margin-bottom: 0.5em;">第1步：</div>
-                    <div style="padding-left: 1em;">点击「扫描设备」以加载设备列表 <b>(已完成)</b></div>
+                    <div style="padding-left: 1em;">点击「扫描设备」以加载设备列表 <b v-if="nfcDevicesComputed.length != 0">(已完成)</b></div>
                 </ElTourStep>
                 <ElTourStep target=".device-tree>>>" title="设置 NFC 设备" :next-button-props="{children:'下一步'}" :prev-button-props="{children:'上一步'}">
                     <div style="font-weight: bold; margin-bottom: 0.5em;">第2步：</div>
