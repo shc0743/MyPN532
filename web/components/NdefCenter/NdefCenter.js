@@ -468,7 +468,7 @@ END:VCARD`;
                 catch (error) {
                     if (!this.$refs.progDlg.open) this.$refs.progDlg.showModal();
                     this.pages[1] = 999;
-                    this.errorText = '写入失败! ' + error;
+                    this.errorText = '写入失败! ' + (error?.errorText || error);
                     console.error('[ndef]', '[ndef.write]', error);
                 }
             });
@@ -502,7 +502,11 @@ END:VCARD`;
                                 this.pages[2] = 9999;
                                 break;
                             }
-                            const dataToWrite = await packTagPayload_m1(new Uint8Array(), 1024, 4);
+                            const dataToWrite = await packTagPayload_m1(new Uint8Array((() => {
+                                const rec = new NdefLibrary.NdefRecord();
+                                const msg = new NdefLibrary.NdefMessage(rec);
+                                return new Uint8Array(msg.toByteArray());
+                            })()), 1024, 4);
                             // 先保存
                             const file_name = '@@TEMP_DATA(临时文件，可放心删除)-用于M1擦除-' + (new Date().getTime()) + '.tmp';
                             const url = new URL('/api/v4.8/api/dumpfile', location.href);
@@ -588,7 +592,7 @@ END:VCARD`;
                 }
                 catch (error) {
                     this.pages[2] = 999;
-                    this.errorText = '写入失败! ' + error;
+                    this.errorText = '写入失败! ' + (error?.errorText || error);
                     console.error('[ndef]', '[ndef.clear]', error);
                 }
             });

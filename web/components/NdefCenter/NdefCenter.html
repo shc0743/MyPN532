@@ -2,7 +2,7 @@
     <ActivityTitle v-deep :inert="anyPageRunning">NDEF</ActivityTitle>
     <style>[inert]>>>{opacity: 0.5;}</style>
     <ActivityBody style="overflow: hidden; display: flex; flex-direction: column;">
-        <div><ElSegmented v-model="currentTab" :options="tabsAvailable" size="large" :disabled="anyPageRunning" title="Element Plus Bug #17715: https://github.com/element-plus/element-plus/issues/17715" /></div>
+        <div><ElSegmented v-model="currentTab" :options="tabsAvailable" size="large" :disabled="anyPageRunning" /></div>
 
         <div class="tabContainer" v-deep>
             <div v-if="currentTab === 'read'">
