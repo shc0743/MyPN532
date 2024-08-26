@@ -7,7 +7,10 @@
                     选择转储文件 (拖放到此处可以快速添加)
                 </template>
             
-                <div style="display: flex; white-space: nowrap; align-items: center; font-size: small;"><span>筛选：</span><ElInput v-model=filterValue size="small" placeholder="输入文本即可筛选" clearable /></ElInput></div>
+                <ElTooltip placement="bottom" content="注意：手动勾选的文件在更换筛选词后不会被自动清除选中！切勿误删您的文件！"><div style="display: flex; white-space: nowrap; align-items: center; font-size: small;">
+                    <span>筛选：</span><ElInput v-model=filterValue size="small" placeholder="输入文本即可筛选" clearable />
+                    <span style="margin-left: 0.5em;">当前已手动选中 {{dumpfile.length}} 项</span>
+                </div></ElTooltip>
                 <ElCheckbox v-model="dumpfileShowAutodump" :disabled="!canContinue">显示自动保存的项</ElCheckbox>
                 <ElCheckbox v-model="dumpfileSelectAll" :disabled="!canContinue">全选 ({{dumpfilesWithFilter.length}})</ElCheckbox>
                 <ElCheckboxGroup :disabled="dumpfileSelectAll" v-model="dumpfile"
