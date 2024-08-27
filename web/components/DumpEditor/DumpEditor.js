@@ -24,7 +24,7 @@ const data = {
             isAutoDump: false,
             editdata: null,
             editorType: 'hex',
-            showUppercase: false,
+            showUppercase_: false,
             allowParticipateBlocks: false,
             isMonacoMode: false,
             Ultralight_monaco_options: {},
@@ -43,6 +43,13 @@ const data = {
         },
         enableM1CFunc() {
             return false === this.isUltraLight;
+        },
+        showUppercase: {
+            get() { return this.showUppercase_; }, set(value) {
+                this.showUppercase_ = value;
+                userconfig.put('editor.hex.uppercase', value);
+                return true;
+            }
         },
     },
 
@@ -107,7 +114,7 @@ const data = {
                 // }
 
                 const showUppercase = await userconfig.get('editor.hex.uppercase') === 'true';
-                if (showUppercase) this.showUppercase = true;
+                if (showUppercase) this.showUppercase_ = true;
 
                 // real load
                 const blob = await this.getFileBlob(this.file);
@@ -401,9 +408,6 @@ const data = {
         file() {
             if (!this.file) return;
             this.$nextTick(() => this.$nextTick(() => this.loadFile()));
-        },
-        showUppercase() {
-            userconfig.put('editor.hex.uppercase', this.showUppercase);  
         },
         isMonacoMode() {
             if (!this.file || !this.enableM1CFunc) return;

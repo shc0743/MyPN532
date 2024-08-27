@@ -262,7 +262,7 @@ class MySectorEditor extends HTMLElement {
             //     .trim()
             //     .split('\n')
             //     .join('')))).split('\n'); // 重新分组数据
-            const lines = this.#el.innerText.trim().split('\n').filter(el => !!el);
+            const lines = (this.#el.innerText.trim()).split('\n').filter(el => !!el);
             const userSelection = this.#shadow.getSelection().getRangeAt(0);
             const { selectionStart, isInStart } = (() => {
                 if (!userSelection) return {};
@@ -317,7 +317,7 @@ class MySectorEditor extends HTMLElement {
                     lines.splice(i, 1, elem.substring(0, 32), elem.substring(32));
                 }
             }
-            this.data = lines;
+            this.data = (lines);
             if (userSelection) {
                 const selection = window.getSelection();
                 selection.removeAllRanges();
@@ -357,4 +357,39 @@ class MySectorEditor extends HTMLElement {
     }
 }
 customElements.define('my-mf-sector-editor', MySectorEditor);
+
+
+// function mergeSingleCharLines(text, noSplit = false) {
+//     // 将文本按换行符分割成行数组
+//     const lines = noSplit ? text : text.split('\n');
+
+//     // 初始化一个空数组来存储合并后的行
+//     const mergedLines = [];
+
+//     // 初始化一个空字符串来累积单个字符
+//     let currentLine = '';
+
+//     lines.forEach(line => {
+//         if (line.length < 32) {
+//             currentLine += line;
+//         } else {
+//             if (currentLine) {
+//                 mergedLines.push(currentLine);
+//                 currentLine = ''; // 重置currentLine
+//             }
+//             // 然后将当前行直接添加到mergedLines中
+//             mergedLines.push(line);
+//         }
+//     });
+
+//     // 不要忘记处理字符串末尾的累积的currentLine（如果有的话）
+//     if (currentLine) {
+//         mergedLines.push(currentLine);
+//     }
+
+//     return mergedLines;
+//     // // 将mergedLines数组重新组合成一个字符串，并用换行符分隔每行
+//     // return mergedLines.join('\n');
+// }  
+// 效果不好，下次再改
 
