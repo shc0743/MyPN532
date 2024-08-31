@@ -16,9 +16,12 @@
                         </div>
                     </div>
                     <div><ElCheckbox v-model="writeDump.b0">启用块0写入</ElCheckbox></div>
+                    <div><ElCheckbox v-model="writeDump.nobcc">跳过BCC校验 (强烈不建议)</ElCheckbox></div>
+                    <div v-if="writeDump.nobcc" style="color: red; margin-bottom: 0.5em;">向标签中写入错误的BCC数据将会<b>永久</b>破坏该标签！请确保你知道你在做什么！</div>
                     <div style="display: flex;">
-                        <ElButton style="flex: 1;" type="success" @click="selectsector(1)">继续</ElButton>
-                        <ElButton style="flex: 1;" type="danger" @click="selectsector(0)">取消</ElButton>
+                        <ElButton v-if="writeDump.nobcc" style="flex: 1;" type="danger" plain @click="selectsector(1)">我知道我在做什么</ElButton>
+                        <ElButton v-else style="flex: 1;" type="success" plain @click="selectsector(1)">继续</ElButton>
+                        <ElButton style="flex: 1;" type="danger" plain @click="selectsector(0)">取消</ElButton>
                     </div>
                 </ActivityBody>
             </ActivityView>
@@ -63,6 +66,26 @@
                 </div>
             </ElCollapseItem>
 
+            <ElCollapseItem title="设置标签 UID" name="setuid">
+                <div v-deep class="input-area">注意：此选项仅对支持更改uid的标签（magic card; UID; CUID; FUID; UFUID）有效</div>
+                <div v-deep class="input-area"><span>新 UID:</span><ElInput style="margin-left: 0.5em;flex: 1;" v-model="writeUid" /><ElButton @click="readSetUid" style="margin-left: 0.5em;">读取现有标签的UID (克隆)</ElButton></div>
+                <div v-deep class="input-area">
+                    <ElButton style="flex: 1;" type="primary" plain @click="executeSetUid(true)">开始执行 (UID/UFUID)</ElButton>
+                    <ElButton style="flex: 1;" type="primary" plain @click="run('executeSetUid')">开始执行 (CUID/FUID)</ElButton>
+                </div>
+            </ElCollapseItem>
+
+            <ElCollapseItem title="复制(克隆)标签" name="clonetag">
+                <div v-deep class="input-area">操作步骤：</div>
+                <ol>
+                    <li><a href="#" @click.prevent="writePage = 'setuid'">展开“设置标签UID”</a></li>
+                    <li>点击“读取现有标签的UID”</li>
+                    <li>根据目标标签类型点击开始执行按钮，进行UID的克隆</li>
+                    <li>返回主页，点击“读标签”，读取原标签</li>
+                    <li>标签读取完成后点击“...”，然后点击“将此转储写入其他标签”，写入标签内容</li>
+                </ol>
+            </ElCollapseItem>
+
             <!-- <ElCollapseItem title="增减值块" name="crease">
             </ElCollapseItem> -->
 
@@ -76,7 +99,7 @@
             <div>已选择 {{userkeyfile.length}} 个密钥文件</div>
             <div><b>已发送请求，正在等待服务器响应...</b></div>
         </template>
-        <template v-if="page === 3 || page === 9999">
+        <template v-if="(page === 3 || page === 9999) || (page >= 10001 && page < 11000)">
             <div style="display: flex; align-items: center; justify-content: center; border-bottom: 1px solid; padding-bottom: 0.5em; margin-bottom: 1em;">
                 <span v-if="page === 3">已选择 {{userkeyfile.length}} 个密钥文件</span>
                 <div style="font-size: x-large; color: green;" v-if="page === 9999">标签写入成功!</div>
@@ -89,7 +112,13 @@
                     <div style="position: sticky; top: 0; left: 0; background-color: #fff; margin-bottom: 0.5em; padding-bottom: 0.5em; border-bottom: 1px solid gray;">操作日志</div>
                 </div>
             </div>
-            <div style="flex: 1; display: grid; place-items: center;" v-if="!show_advanced">
+            <div v-if="(page >= 10001 && page < 11000) && (!show_advanced)" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div style="color: red; font-size: x-large; text-align: center; margin-bottom: 1em; padding-bottom: 0.5em; border-bottom: 1px solid;">出现错误！(错误代码：{{page}}) <ElButton text @click="retryAction">重试</ElButton><ElButton text size="small" @click="show_advanced = true">显示日志</ElButton></div>
+                <div v-text="error分析" style="white-space: pre; font-weight: bold;"></div>
+                <div style="margin-top: 1em; padding-top: 0.5em; border-top: 1px solid;">问题详细信息:</div>
+                <div v-text="errorText" style="flex: 1; overflow: auto; white-space: pre;"></div>
+            </div>
+            <div style="flex: 1; display: grid; place-items: center;" v-if="!show_advanced && (!(page >= 10001 && page < 11000))">
                 <div style="text-align: center;">
                     <div style="margin-bottom: 1em;" v-if="page === 3">正在写入标签...</div>
                     <div style="margin-bottom: 0.5em; font-size: x-large; color: green;" v-if="page === 9999">标签写入成功!</div>
@@ -98,14 +127,6 @@
                     <div style="margin-top: 1em;"><ElButton type="success" plain @click="doneWrite" v-if="page === 9999">完成</ElButton></div>
                     <div style="margin-top: 1em;"><ElButton text size="small" @click="show_advanced = true">显示更多...</ElButton></div>
                 </div>
-            </div>
-        </template>
-        <template v-if="page >= 10001 && page < 11000">
-            <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                <div style="color: red; font-size: x-large; text-align: center; margin-bottom: 1em; padding-bottom: 0.5em; border-bottom: 1px solid;">出现错误！(错误代码：{{page}}) <ElButton text @click="retryAction">重试</ElButton></div>
-                <div v-text="error分析" style="white-space: pre; font-weight: bold;"></div>
-                <div style="margin-top: 1em; padding-top: 0.5em; border-top: 1px solid;">问题详细信息:</div>
-                <div v-text="errorText" style="flex: 1; overflow: auto; white-space: pre;"></div>
             </div>
         </template>
     </ActivityBody>

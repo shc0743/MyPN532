@@ -415,6 +415,13 @@ write_card(bool unlock, bool write_block_zero)
 	// Completely write the card, but skipping block 0 if we don't need to write on it
 	for (uiBlock = 0; uiBlock <= uiBlocks; uiBlock++) {
 		Echo("Writing block " + to_string(uiBlock) + "... ");
+		// Determine if we need to write this block
+		if (useSectorsToWrite) {
+			if (!sectorsToWrite.contains((uiBlock / 4))) {
+				Echo("Skipped\n");
+				continue;
+			}
+		}
 		//Determine if we have to write block 0
 		if (uiBlock == 0 && (!write_block_zero || bFormatCard)) {
 			Echo("Skipped\n");
@@ -451,7 +458,8 @@ write_card(bool unlock, bool write_block_zero)
 			// (write_block_zero && dWrite) || 
 			// has broken the write of UID (magic card 1), so I removed the code
 			//
-			if ((write_block_zero && !unlock) || !write_block_zero || uiBlock > 0) {
+			if ((write_block_zero && !unlock) || !write_block_zero || uiBlock > 0) do {
+				if (unlocked) break;
 				constexpr size_t MAX_RETRY_COUNT = 3;
 				for (size_t i = 0; i < MAX_RETRY_COUNT; ++i)
 					if (!authenticate(uiBlock)) {
@@ -459,14 +467,7 @@ write_card(bool unlock, bool write_block_zero)
 							i < MAX_RETRY_COUNT ? " Retrying..." : "");
 						if (!bTolerateFailures) return false;
 					}
-			}
-		}
-
-		if (useSectorsToWrite) {
-			if (!sectorsToWrite.contains((uiBlock / 4))) {
-				Echo("Skipped\n");
-				continue;
-			}
+			} while (0);
 		}
 
 			if (is_trailer_block(uiBlock)) {

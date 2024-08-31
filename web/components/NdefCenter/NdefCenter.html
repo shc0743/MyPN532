@@ -7,7 +7,8 @@
         <div class="tabContainer" v-deep>
             <div v-if="currentTab === 'read'">
                 <div v-deep class="input-area">
-                    <ElButton :disabled="anyPageRunning" style="flex: 1;" type="primary" plain @click="readNdefData">开始读取</ElButton>
+                    <ElButton :disabled="anyPageRunning" style="flex: 1;" type="primary" plain @click="readNdefData(READ_INDEEP)">快速读取</ElButton>
+                    <ElButton :disabled="anyPageRunning" style="flex: 1;" type="primary" plain @click="readNdefData(null)">深度读取</ElButton>
                     <div v-if="showReadOptionPopover" style="position: fixed; inset: 0; z-index: 1; background: #ffffff; opacity: 0.5;" @click="showReadOptionPopover = false"></div>
                     <ElPopover trigger="manual" :visible="showReadOptionPopover" width="400">
                         <template #reference>
@@ -116,7 +117,7 @@
                 <ElButton type="danger" size="large" plain @click="doneWriteOperation">关闭</ElButton>
                 <details style="margin-top: 0.5em;">
                     <summary>详细信息</summary>
-                    <div v-text="errorText" style="border: 1px solid gray; border-radius: 10px; margin-top: 0.5em; padding: 0.5em; white-space: pre;"></div>
+                    <div v-text="errorText" style="border: 1px solid gray; border-radius: 10px; margin-top: 0.5em; padding: 0.5em; white-space: pre-wrap; word-break: break-all;"></div>
                 </details>
             </div>
         </dialog>

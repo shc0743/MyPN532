@@ -249,7 +249,7 @@ export async function packTagPayload_m0(payload, cardData, maxSize = Number.MAX_
     const data = ([0x03]);
     let payloadSize = payload.length;
     if (payloadSize > 0xFFFE) throw 'payload too large for target tag';
-    if (payloadSize > (maxSize - 36 - 4)) throw 'payload too large, trying to write ' + payloadSize + ' bytes in a tag contains ' + (maxSize - 36 - 4);
+    if (payloadSize > (maxSize - 36 - 4)) throw '写入数据量过大，尝试在 ' + (maxSize - 36 - 4) + ' 字节大小的标签中写入 ' + payloadSize + ' 字节\n;;' + 'payload too large, trying to write ' + payloadSize + ' bytes in a tag contains ' + (maxSize - 36 - 4);
     if (payloadSize > 0xFF) {
         data.push(0xFF, (payloadSize & 0xFF00) >> 8, payloadSize & 0x00FF);
     } else {
@@ -292,7 +292,7 @@ export async function packTagPayload_m1(payload, size = 1024, sectorSize = 4) {
             .slice(0, size);
     const sectorCount = size / sectorSize / 16;
     if (isNaN(sectorCount)) throw 'NaN sector count';
-    let ptr = 0;
+    let ptr = 0; let dataWritten = 0;
     for (let i = 1; ((i) < sectorCount); ++i) { // sector-level loop
         for (let j = 0; j < sectorSize; ++j) { // block-level loop
             if ((j + 1) === sectorSize) {
@@ -302,10 +302,11 @@ export async function packTagPayload_m1(payload, size = 1024, sectorSize = 4) {
             }
             // data block
             sector.push.apply(sector, pl.slice(ptr, ptr + 16));
-            ptr += 16;
+            ptr += 16; dataWritten += 16;
         }
     }
     sector.push(0xFE);
+    if (dataWritten < payload.length) throw `写入数据量过大，该标签最多写入 ${dataWritten} 个字节，但尝试写入 ${payload.length} 字节的数据`;
     return new Uint8Array(sector);
 }
 

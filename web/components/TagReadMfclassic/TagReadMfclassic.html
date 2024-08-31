@@ -16,7 +16,19 @@
                 </label>
             </div>
             <div style="margin-bottom: 0.5em; display: flex; flex-direction: column; justify-content: center;">
-                <label style="cursor: pointer;"><ElTooltip placement="right" content="使用 mfoc 可以尽最大可能读取标签数据"><span><ElCheckbox v-model="use_mfoc" />&nbsp;使用<i title="MiFare Offline Cracker">mfoc</i> (推荐)</span></ElTooltip></label>
+                <label style="cursor: pointer;">
+                    <ElTooltip placement="right" content="使用 mfoc 可以尽最大可能读取标签数据"><span><ElCheckbox v-model="use_mfoc" />&nbsp;使用<i title="MiFare Offline Cracker">mfoc</i> (推荐)</span></ElTooltip>
+                    <span v-if="use_mfoc" style="margin-left: 0.5em;" v-show="false" data-comment="// TODO: Bugful; TO-DO Later">
+                        <span style="margin-right: 0.5em;">扇区: {{sectorToReadComputed}}</span>
+                        <ElPopover trigger="click" height="80%">
+                            <template #reference><a href="#" @click.prevent>修改</a></template>
+                            <div>扇区总数: <ElInput type="number" v-model="userSectorCountForSTR" :min="1" :max="255" /></div>
+                            <ElCheckboxGroup v-model="sectorToRead">
+                                <ElCheckbox v-for="i in userSectorCountForSTRComp" :value="i">扇区 {{i}}</ElCheckbox>
+                            </ElCheckboxGroup>
+                        </ElPopover>
+                    </span>
+                </label>
                 <label style="cursor: pointer;" v-if="use_mfoc"><ElTooltip placement="right" content="原版mfoc在指定密钥时仍尝试默认密钥，效率较低，不建议使用"><span><ElCheckbox v-model="use_raw_mfoc" />&nbsp;使用原版mfoc (不推荐)</span></ElTooltip></label>
                 <a href="#/tag/mfmagic1/unlock/read" @click.prevent="rununlockuid">使用解锁模式读取UID卡...</a>
             </div>

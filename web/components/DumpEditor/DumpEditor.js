@@ -193,28 +193,31 @@ const data = {
                         }
                     }
                     const finalStr = final.join('\n');
-                    this.$refs.monaco.value = finalStr;
-                    if (!this.$refs.monaco._actionadded) {
-                        this.$refs.monaco.editor.addAction({
-                            id: 'saveFile',
-                            label: '保存文件',
-                            keybindings: [
-                                monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS
-                            ],
-                            contextMenuGroupId: 'navigation',
-                            contextMenuOrder: 0.5,
-                            run: () => {
-                                this.savefile(true);
-                            }
-                        });
-                        this.$refs.monaco._actionadded = true;
-                    }
+                    this.$nextTick(() => {
+                        this.$refs.monaco.value = finalStr;
+                        if (!this.$refs.monaco._actionadded) {
+                            this.$refs.monaco.editor.addAction({
+                                id: 'saveFile',
+                                label: '保存文件',
+                                keybindings: [
+                                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS
+                                ],
+                                contextMenuGroupId: 'navigation',
+                                contextMenuOrder: 0.5,
+                                run: () => {
+                                    this.savefile(true);
+                                }
+                            });
+                            this.$refs.monaco._actionadded = true;
+                        }
+                    });
                     return;
                 }
 
                 this.$nextTick(() => this.$refs.myEditor?.load?.());
 
             } catch (error) {
+                console.error('[DumpEditor]', error);
                 ElMessageBox.alert(error, '文件加载失败', {
                     type: 'error',
                     confirmButtonText: '取消',
@@ -383,8 +386,8 @@ const data = {
                         fetch(url, {
                             method: 'PATCH',
                             body: new Blob(resultArray),
-                        }).then(v => {
-                            if (!v.ok) throw `HTTP Error ${v.status}: ${v.statusText}`;
+                        }).then(async v => {
+                            if (!v.ok) throw `${await v.text()}\n\n;;HTTP Error ${v.status}: ${v.statusText}`;
                             ElMessageBox.alert('导出成功！已保存密钥文件 ' + userfilename, '导出成功', {
                                 type: 'success'
                             });

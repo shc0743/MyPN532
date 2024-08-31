@@ -28,7 +28,7 @@
                     <span class="custom-tree-node" v-deep>
                         <span>{{ node.label }}</span>
                         <span style="float: right;" v-if="data.isRoot">
-                            <a href="#" @click.prevent.stop="testDevice(data)" style="margin-right: 1.5em;">测试</a>
+                            <a href="#" @click.prevent.stop="testDevice(data)" style="margin-right: 1.5em;" title="可“点亮”PN532">测试</a>
                             <a href="#" @click.prevent.stop="setDefaultDevice(data)">设为默认</a>
                         </span>
                     </span>

@@ -40,6 +40,8 @@ const data = {
             dumpFile: '',
             unlockuid: false,
             error分析: '',
+            sectorToRead: [],
+            userSectorCountForSTR: 16,
 
         }
     },
@@ -47,6 +49,19 @@ const data = {
     components: {
         KeyReflect,
         
+    },
+
+    computed: {
+        sectorToReadComputed() {
+            const r = [];
+            for (let i = 0; i < +this.userSectorCountForSTR; ++i) if (this.sectorToRead.includes(i)) r.push(i);
+            return r.length === +this.userSectorCountForSTR ? '全部' : r.join(',')
+        },
+        userSectorCountForSTRComp() {
+            const r = [];
+            for (let i = 0; i < +this.userSectorCountForSTR; ++i) r.push(i);
+            return r;
+        },
     },
 
     methods: {
@@ -164,6 +179,15 @@ const data = {
             this.error分析 = '暂无可用的分析信息';
         },
 
+    },
+
+    watch: {
+        userSectorCountForSTR: {
+            immediate: true,
+            handler(newValue) {
+                for (let i = 0; i < newValue; ++i) this.sectorToRead.push(i);
+            },
+        },
     },
 
     mounted() {

@@ -33,7 +33,7 @@ const data = {
             ],
             pages: [1, 1, 1],
             errorText: '',
-            READ_DUMP: Symbol(),
+            READ_DUMP: Symbol(), READ_INDEEP: Symbol(),
             dump: { file: '', files: [], type: '' },
             rawRecord: [],
             record: [],
@@ -121,7 +121,8 @@ const data = {
                 if (!card_type) throw '无法确定标签类型（根据SAK值）。\n' + JSON.stringify(taginfo, null, 4);
                 const card_data_file = (card_type === 'm1') ?
                     (await m1_perform_action(ACTION_READ, {}, () => { }, {
-                        use_mfoc: true,
+                        read_ndef: ((arg === this.READ_INDEEP) ? true : false),
+                        use_mfoc: true, // for compatibility
                     })) :
                     (await ((await fetch('/api/v4.8/nfc/ultralight/read', { method: 'POST' })).text()));
                 // console.log(card_data_file);
@@ -130,7 +131,8 @@ const data = {
             } catch (error) {
                 if (typeof error === 'string' && /^NdefExceptionMessages.([\w]*)$/.test(error)) {
                     this.rawRecord.length = this.record.length = 0;
-                    this.extraReadTipText = '标签中的数据不是 NDEF 格式';
+                    if (arg === this.READ_INDEEP) this.extraReadTipText = '请尝试进行深度读取';
+                    else this.extraReadTipText = '标签中的数据不是 NDEF 格式';
                     this.pages[0] = 10099;
                     return;
                 }
@@ -384,7 +386,7 @@ END:VCARD`;
                     switch (card_type) {
                         case 'm1': {
                             const packData = new Uint8Array(this.packSelf());
-                            if (!cr) if (packData.length > 720) throw '数据量过大';
+                            // if (!cr) if (packData.length > 720) throw '数据量过大';
                             const dataToWrite = await packTagPayload_m1(packData, 1024, 4);
                             // 先保存
                             const file_name = crFile || '@@TEMP_DATA(临时文件，可放心删除)-用于M1写入-' + (new Date().getTime()) + '.tmp';

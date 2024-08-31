@@ -2,7 +2,7 @@ import { getHTML } from '@/assets/js/browser_side-compiler.js';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import KeyReflect from '../KeyReflect/KeyReflect.js';
 import { error_keywords, tickManager } from '../TagReadMfclassic/TagReadMfclassic.js';
-import { ACTION_WRITE, m1_perform_action } from '../../assets/scripts/m1tag-rw.js';
+import { ACTION_READ, ACTION_WRITE, m1_perform_action } from '../../assets/scripts/m1tag-rw.js';
 
 
 const componentId = '99960219-4827-40f0-af99-fe93345faa58';
@@ -19,7 +19,9 @@ const data = {
                 files: ['正在加载文件列表...'],
                 file: '',
                 b0: false,
+                nobcc: false,
             },
+            writeUid: '',
             Myfunc_: null,
             userkeyfile: [],
             writeSectorAll: true,
@@ -96,6 +98,7 @@ const data = {
                 writeB0: this.writeDump.b0,
                 unlock: !!(options?.uid),
                 dumpfile: this.writeDump.file,
+                noBccCheck: this.writeDump.nobcc,
             });
         },
         async executeFormat(isUid) {
@@ -141,6 +144,51 @@ const data = {
                 this.errorText = '意外错误：' + error;
             }
         },
+        async executeSetUid(isUid) {
+            if (!this.writeUid) return ElMessage.error('必须输入新UID');
+            this.page = 2;
+            if (isUid === true) {
+                this.executeWebSocketRoutine({
+                    type: 'format-mfclassic',
+                    unlock: true,
+                    reset: true,
+                    newUid: this.writeUid,
+                }); return;
+            }
+
+            try {
+                if (this.writeUid.length !== 8) throw 'UID长度不正确。此功能仅支持 Mifare Classic S50 (1K) 标签，该卡种UID长度为4字节（8个字符）';
+                const filename = (await m1_perform_action(ACTION_READ, {}, () => { }, {
+                    use_mfoc: true,
+                }));
+                const url = new URL('/api/v4.8/api/dumpfile', location.href);
+                url.searchParams.append('filename', filename);
+                url.searchParams.append('autodump', 'true');
+                const data = new Uint8Array(await (await fetch(url)).arrayBuffer());
+                await fetch(url, { method: 'DELETE' });
+                if (data.length !== 1024) throw '标签大小不正确，此功能仅支持 Mifare Classic S50 (1K) 标签';
+                const s = (d, n) => d.substring(n * 2, n * 2 + 2);
+                const h = s => parseInt(s, 16);
+                for (let i = 0; i < 4; ++i) data[i] = h(s(this.writeUid, i));
+                const correctBCC = data[0] ^ data[1] ^ data[2] ^ data[3];
+                data[4] = correctBCC;
+                url.searchParams.delete('autodump');
+                const upload_resp = await fetch(url, { method: 'PUT', body: data });
+                if (!upload_resp.ok) throw '文件保存失败：' + upload_resp.status;
+                const p = this.executeWebSocketRoutine({
+                    type: 'write-mfclassic',
+                    keyfiles: this.userkeyfile.sort().join('|'),
+                    sectors: '0',
+                    writeB0: true,
+                    dumpfile: filename,
+                });
+                p.finally(() => fetch(url, { method: 'DELETE' }));
+            } catch (error) {
+                // if (typeof error !== 'string') console.error(error);
+                this.page = 10002;
+                this.errorText = '意外错误：' + error ? (error.errorText || error) : '未知错误';
+            }
+        },
         retryAction() {
             globalThis.appInstance_.instance.current_page = 'blank';
             globalThis.appInstance_.instance.$nextTick(() => {
@@ -159,7 +207,7 @@ const data = {
             const nop = function () { };
             const logNode = (node) => this.$refs.logDiv?.append(node);
             const log = (text) => logNode(document.createTextNode(text));
-            m1_perform_action(ACTION_WRITE, {
+            return m1_perform_action(ACTION_WRITE, {
                 'pipe-created': () => {
                     this.write_percent += 5;
                 },
@@ -206,11 +254,12 @@ const data = {
                     this.writeSectorToWrite = 'A';
                 }
                 tickManager.delete(this);
+                tickManager.cancel_ontick(this.ontick_A); // 特殊情况,e.g.因写入错误而中断
                 tickManager.cancel_ontick(this.ontick_B);
             }).catch(error => {
                 if (this.page < 100) {
-                    this.page = 10002;
-                    this.errorText = error.errorText;
+                    this.page = 10002; this.show_advanced = false;
+                    this.errorText = error.errorText || String(error) ;
                     queueMicrotask(() => this.分析错误());
                 }
             });
@@ -234,6 +283,16 @@ const data = {
             else {
                 history.replaceState({}, document.title, '#/');
                 window.dispatchEvent(new HashChangeEvent('hashchange'));
+            }
+        },
+        async readSetUid() {
+            try {
+                const taginforesp = await fetch('/api/v4.8/nfc/taginfojson');
+                if (!taginforesp.ok) throw '标签读取失败，请检查标签及设备连接\n\nHTTP Error: ' + taginforesp.status + ' ' + taginforesp.statusText;
+                const taginfo = await taginforesp.json();
+                this.writeUid = taginfo.uid;
+            } catch (error) {
+                ElMessage.error('读取失败，请先将标签放在读卡器上再按此按钮');
             }
         },
     },

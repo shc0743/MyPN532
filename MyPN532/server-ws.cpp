@@ -19,12 +19,14 @@ public:
 		hPipe_outbound_keyfile(0),
 		use_mfoc(false),
 		use_raw_mfoc(false),
-		unlock(false)
+		unlock(false),
+		read_ndef(false)
 	{};
 	vector<wstring> keyfiles;
 	HANDLE hPipe_outbound_keyfile;
 	bool use_mfoc, use_raw_mfoc;
 	bool unlock;
+	bool read_ndef;
 	wstring sectorsStr;
 	wstring internalDataProvider;
 };
@@ -63,16 +65,19 @@ public:
 		isFormat(false),
 		unlock(false),
 		reset(false),
-		writeB0(false)
+		writeB0(false),
+		noBccCheck(false)
 	{};
 	vector<wstring> keyfiles;
 	HANDLE hPipe_outbound_keyfile;
 	bool isFormat;
 	bool unlock, reset;
 	bool writeB0;
+	bool noBccCheck;
 	wstring dumpfile;
 	unique_ptr<DUMPDATA_T> dumpdata;
 	wstring sectors;
+	wstring reset_newuid;
 	wstring internalDataProvider;
 };
 
@@ -178,16 +183,17 @@ static void wsProcessMessage(const WebSocketConnectionPtr& wsConnPtr, std::strin
 			return;
 		}
 
+#define declare_bool_data(varName) bool varName = json.isMember( # varName ) ?\
+			(json[ # varName ].isBool() ? json[ # varName ].asBool() : false) : false;
 		if (type == "read-nfc-tag-mfclassic") {
 			WS_SESSIONID sessionId = json["sessionId"].asUInt64();
 			Json::Value val;
 			val["success"] = false;
 			val["sessionId"] = sessionId;
 			wstring sz_keyfiles = ConvertUTF8ToUTF16(json["keyfiles"].asString());
-			bool use_mfoc = json["use_mfoc"].asBool();
-			bool use_raw_mfoc = json["use_raw_mfoc"].asBool();
-			bool unlock = json.isMember("unlock") ?
-				(json["unlock"].isBool() ? json["unlock"].asBool() : false) : false;
+			declare_bool_data(use_mfoc); declare_bool_data(use_raw_mfoc);
+			declare_bool_data(unlock);
+			declare_bool_data(read_ndef);
 			wstring sectors;
 			if (json.isMember("sector_range") && json["sector_range"].isArray()) {
 				auto& start = json["sector_range"][0];
@@ -233,6 +239,7 @@ static void wsProcessMessage(const WebSocketConnectionPtr& wsConnPtr, std::strin
 				ad.use_raw_mfoc = use_raw_mfoc;
 				ad.unlock = unlock;
 				ad.sectorsStr = sectors;
+				ad.read_ndef = read_ndef;
 				wsSessionIdData_ReadMifare.insert(std::make_pair(sessionId, ad));
 
 				val["code"] = 0;
@@ -253,15 +260,16 @@ static void wsProcessMessage(const WebSocketConnectionPtr& wsConnPtr, std::strin
 			wstring sz_keyfiles = ConvertUTF8ToUTF16(json["keyfiles"].asString());
 			wstring sz_dumpfile = ConvertUTF8ToUTF16(json["dumpfile"].asString());
 			wstring sz_dumpdata = ConvertUTF8ToUTF16(json["dumpdata"].asString());
-			bool unlock = json.isMember("unlock") ?
-				(json["unlock"].isBool() ? json["unlock"].asBool() : false) : false;
-			bool writeB0 = json.isMember("writeB0") ?
-				(json["writeB0"].isBool() ? json["writeB0"].asBool() : false) : false;
-			bool reset = json.isMember("reset") ?
-				(json["reset"].isBool() ? json["reset"].asBool() : false) : false;
-			wstring sectors;
+			declare_bool_data(unlock);
+			declare_bool_data(writeB0);
+			declare_bool_data(reset);
+			declare_bool_data(noBccCheck);
+			wstring sectors, newUid;
 			if (json.isMember("sectors") && json["sectors"].isString()) {
 				sectors = ConvertUTF8ToUTF16(json["sectors"].asString());
+			}
+			if (json.isMember("newUid") && json["newUid"].isString()) {
+				newUid = ConvertUTF8ToUTF16(json["newUid"].asString());
 			}
 			
 			if (type != "format-mfclassic" && (sz_dumpfile.empty() && sz_dumpdata.empty())) {
@@ -288,8 +296,10 @@ static void wsProcessMessage(const WebSocketConnectionPtr& wsConnPtr, std::strin
 				ad.writeB0 = writeB0;
 				ad.reset = reset;
 				ad.sectors = sectors;
+				ad.noBccCheck = noBccCheck;
 				ad.isFormat = (type == "format-mfclassic");
 				ad.dumpfile = sz_dumpfile;
+				ad.reset_newuid = newUid;
 				if (!sz_dumpdata.empty()) {
 					ad.dumpdata.reset(new DUMPDATA_T);
 					auto data = (*ad.dumpdata).getData();
@@ -311,6 +321,8 @@ static void wsProcessMessage(const WebSocketConnectionPtr& wsConnPtr, std::strin
 			wsConnPtr->send(fastWriter.write(val));
 			return;
 		}
+
+#undef declare_bool_data
 
 		throw "No handler found with type " + type;
 	}
@@ -614,6 +626,7 @@ DWORD __stdcall wsNativeReadNfcMfClassic(PVOID pConnInfo) {
 		wsSessionSessionEnd(sessionId);
 		return -1;
 	}
+	if (data->read_ndef && data->use_mfoc) data->use_mfoc = false;
 
 	bool unlock = data->unlock;
 
@@ -849,6 +862,12 @@ DWORD __stdcall wsNativeReadNfcMfClassic(PVOID pConnInfo) {
 				cmd += L"-read -O\"" + pipe + L"\" -f\"" + pipeKeyFile + L"\" ";
 				if (!data->sectorsStr.empty()) cmd += L" --sectors=" + data->sectorsStr;
 			}
+			if (data->read_ndef) {
+				cmd = L"bin/self/service --type=mfclassic -cr --ndef-only --pipe=" + pipe;
+			}
+			SERVER_EVENT_BEGIN("run-log");
+			SERVER_EVENT_SET_PARAMETER(data, ConvertUTF16ToUTF8(L"run-command: " + cmd + L"\n"));
+			SERVER_EVENT_END();
 			GetProcessStdOutputWithExitCodeEnhanced(cmd,
 				&dwCode, std, true, rlcbw, (PVOID)sessionId);
 			text = s2ws(ansi);
@@ -1293,6 +1312,45 @@ DWORD __stdcall wsNativeWriteNfcMfClassic(PVOID pConnInfo) {
 
 	bool unlock = data->unlock;
 
+	// check BCC
+	if (!data->isFormat && !data->noBccCheck) {
+		HANDLE file = CreateFileW((L"dumps/" + data->dumpfile).c_str(), FILE_READ_DATA,
+			FILE_SHARE_READ, 0, OPEN_EXISTING, 0, 0);
+		if (!file || file == INVALID_HANDLE_VALUE) {
+			SERVER_EVENT_BEGIN("action-ended")
+				SERVER_EVENT_SET_PARAMETER(success, false)
+				SERVER_EVENT_SET_PARAMETER(location, __LINE__)
+				SERVER_EVENT_SET_PARAMETER(errorText, ccs8("BCC校验失败: 无法打开转储文件: Could not open dump file: " + LastErrorStr() + L"\n"))
+			SERVER_EVENT_END()
+			SERVER_SESSION_END()
+			return 1;
+		}
+		uint8_t data[6]{}; DWORD readed = 0;
+		if (!ReadFile(file, data, 5, &readed, 0)) {
+			SERVER_EVENT_BEGIN("action-ended")
+				SERVER_EVENT_SET_PARAMETER(success, false)
+				SERVER_EVENT_SET_PARAMETER(location, __LINE__)
+				SERVER_EVENT_SET_PARAMETER(errorText, ccs8("BCC校验失败: 无法读取转储文件"))
+			SERVER_EVENT_END()
+			SERVER_SESSION_END()
+			return 1;
+		}
+		CloseHandle(file);
+		if (data[0] ^ data[1] ^ data[2] ^ data[3] ^ data[4]) {
+			SERVER_EVENT_BEGIN("action-ended")
+				SERVER_EVENT_SET_PARAMETER(success, false)
+				SERVER_EVENT_SET_PARAMETER(location, __LINE__)
+				SERVER_EVENT_SET_PARAMETER(errorText, ccs8("BCC校验失败! 请前往编辑该文件，在编辑器中可以计算正确的BCC值"))
+			SERVER_EVENT_END()
+			SERVER_SESSION_END()
+			return 1;
+		}
+
+		SERVER_EVENT_BEGIN("run-log");
+		SERVER_EVENT_SET_PARAMETER(data, ConvertUTF16ToUTF8(L"BCC校验: 已通过\n"));
+		SERVER_EVENT_END();
+	}
+
 	// connect
 #pragma region Create pipeKeyFile
 	wstring pipeKeyFile = L"\\\\.\\pipe\\" + s2ws(app_token) +
@@ -1308,7 +1366,7 @@ DWORD __stdcall wsNativeWriteNfcMfClassic(PVOID pConnInfo) {
 		if (hPipe == INVALID_HANDLE_VALUE) {
 			SERVER_EVENT_BEGIN("action-ended")
 				SERVER_EVENT_SET_PARAMETER(success, false)
-				SERVER_EVENT_SET_PARAMETER(errorText, L"创建管道1失败")
+				SERVER_EVENT_SET_PARAMETER(errorText, ccs8("创建管道1失败"))
 			SERVER_EVENT_END()
 			SERVER_SESSION_END()
 			return 1;
@@ -1320,7 +1378,7 @@ DWORD __stdcall wsNativeWriteNfcMfClassic(PVOID pConnInfo) {
 		if (hThread == NULL) {
 			SERVER_EVENT_BEGIN("action-ended")
 				SERVER_EVENT_SET_PARAMETER(success, false)
-				SERVER_EVENT_SET_PARAMETER(errorText, L"创建管道1的线程失败")
+				SERVER_EVENT_SET_PARAMETER(errorText, ccs8("创建管道1的线程失败"))
 			SERVER_EVENT_END()
 			SERVER_SESSION_END()
 			CloseHandle(hPipe);
@@ -1474,9 +1532,13 @@ DWORD __stdcall wsNativeWriteNfcMfClassic(PVOID pConnInfo) {
 			L".cardwrite-" + to_wstring(pipeId) + L".pipe";
 		command += L" --pipe=" + pipe + L" ";
 
-		if (data->reset) command = L"bin/nfc/nfc-mfsetuid -f " + GenerateUUIDWithoutDelimW().substr(0, 8);
+		if (data->reset && (!data->reset_newuid.empty())) command = L"bin/nfc/nfc-mfsetuid " + data->reset_newuid;
+		else if (data->reset) command = L"bin/nfc/nfc-mfsetuid -f " + (GenerateUUIDWithoutDelimW().substr(0, 8));
 		else if (data->isFormat && data->unlock) command = L"bin/nfc/nfc-mfsetuid -f " + s2ws(uid);
 
+		SERVER_EVENT_BEGIN("run-log");
+		SERVER_EVENT_SET_PARAMETER(data, ConvertUTF16ToUTF8(L"[debug] new uid: " + data->reset_newuid + L"\r\n"));
+		SERVER_EVENT_END();
 		SERVER_EVENT_BEGIN("run-log");
 		SERVER_EVENT_SET_PARAMETER(data, ConvertUTF16ToUTF8(L"run-command: " + command + L"\r\n"));
 		SERVER_EVENT_END();
