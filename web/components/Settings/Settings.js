@@ -15,6 +15,8 @@ const data = {
                 label: 'label',
             },
             showDeviceTour: false,
+            internal_version: '正在加载...',
+            allowUpdates: false,
         }
     },
 
@@ -60,6 +62,8 @@ const data = {
             this.cfgDefaultDevice = '';
             this.nfcDevices.length = 0;
             try {
+                this.internal_version = await (await fetch("/api/v5.0/app/version")).text();
+                this.allowUpdates = 'true' !== await userconfig.get('updatechecker.disabled');
                 const defaultdeviceresp = await fetch('/api/v4.8/nfc/defaultdevice');
                 if (defaultdeviceresp.headers.get('x-device-not-recognized') === 'true') {
                     this.cfgDefaultDevice = '无法连接，可能是由于设备未插入或更换了USB插口，详情请把鼠标放到此处查看|如果设备未插入，请插入设备然后刷新页面；如果是更换了USB口，请重新扫描设备';
@@ -103,7 +107,7 @@ const data = {
             const connstring = data.connstring;
             const com = connstring.split('|')[1].split(':')[1].substring(3);
             ElMessage.success('测试已开始');
-            fetch('/api/v4.8/nfc/testdevice', {
+            fetch('/api/v5.0/nfc/testdevice', {
                 method: 'POST',
                 body: com,
             }).then(() => ElMessage.success('测试完成！')).catch(e => {
@@ -160,6 +164,9 @@ const data = {
         changeappmode() {
             globalThis.appInstance_.instance.advancedUserOptions = globalThis.appInstance_.instance.advancedUser ? '1' : '0';
             globalThis.appInstance_.instance.$refs.advancedUserDlg.showModal();
+        },
+        updateUpdatingPolicy() {
+            userconfig.put('updatechecker.disabled', !this.allowUpdates).then(() => ElMessage.success('更新偏好已保存。'));
         },
     },
 

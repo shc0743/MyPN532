@@ -201,6 +201,18 @@ main[v-deep] .error-view {
             <div style="margin-top: 0.5em; padding-top: 0.5em; border-top: 1px solid; display: flex;"><ElButton type="primary" plain style="flex: 1" @click="applyAdvancedUserOptions">完成</ElButton></div>
         </dialog>
 
+        <dialog ref="updateDlg">
+            <div style="font-weight: bold; font-size: x-large; text-align: center;">检测到应用程序更新</div>
+            <div style="margin-top: 0.5em;">
+                <div>新版本-内部版本号: {{updateTarget}}</div>
+            </div>
+            <div style="margin-top: 0.5em; display: flex;">
+                <ElButton @click="updateapi(1)" plain type="primary">前往下载</ElButton>
+                <ElButton @click="updateapi(2)" plain type="danger">忽略版本 {{updateTarget}}</ElButton>
+                <ElButton @click="updateapi(0)" plain type="info">暂不更新</ElButton>
+            </div>
+        </dialog>
+
         <ElTour v-if="current_page === 'main'" v-model="showGuide">
             <ElTourStep title="欢迎使用" :next-button-props="{children:'让我们开始吧'}">
                 <div style="font-size: x-large; font-weight: bold; text-align: center;">欢迎使用此NFC工具！</div>
@@ -269,6 +281,7 @@ main[v-deep] .error-view {
             </template>
         </ElTour>
 
+        <AdService ref="adService" />
 
     </main>
 <!-- </resizable-widget> -->

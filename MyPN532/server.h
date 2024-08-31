@@ -51,12 +51,18 @@ namespace server {
 			ADD_METHOD_TO(server::MainServer::taginfo, "/api/v4.8/nfc/taginfo", Get, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::taginfojson, "/api/v4.8/nfc/taginfojson", Get, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::defaultdevice, "/api/v4.8/nfc/defaultdevice", Get, Put, Delete, Options, "server::AuthFilter");
-			ADD_METHOD_TO(server::MainServer::testdevice, "/api/v4.8/nfc/testdevice", Post, Options, "server::AuthFilter");
+			ADD_METHOD_TO(server::MainServer::testdevice, "/api/v5.0/nfc/testdevice", Post, Options, "server::AuthFilter");
 			
 			ADD_METHOD_TO(server::MainServer::readultralight, "/api/v4.8/nfc/ultralight/read", Post, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::writeultralight, "/api/v4.8/nfc/ultralight/write", Post, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::lockufuid, "/api/v4.8/nfc/uid/lock", Post, Options, "server::AuthFilter");
 
+			ADD_METHOD_TO(server::MainServer::appversion, "/api/v5.0/app/version", Get, Options, "server::AuthFilter");
+			ADD_METHOD_TO(server::MainServer::updateurl, "/api/v5.0/app/update/url", Get, Options, "server::AuthFilter");
+			ADD_METHOD_TO(server::MainServer::updaterel, "/api/v5.0/app/update/release", Get, Options, "server::AuthFilter");
+			
+			ADD_METHOD_TO(server::MainServer::getgenshinurl, "/api/v5.0/api/genshin/url", Get, Options, "server::AuthFilter");
+			ADD_METHOD_TO(server::MainServer::getgenshinversion, "/api/v5.0/api/genshin/version", Get, Options, "server::AuthFilter");
 		METHOD_LIST_END
 
 
@@ -84,6 +90,13 @@ namespace server {
 		void readultralight(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void writeultralight(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void lockufuid(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+
+		void appversion(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		void updateurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		void updaterel(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		
+		void getgenshinurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		void getgenshinversion(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 
 
 	public:

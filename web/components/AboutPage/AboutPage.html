@@ -3,6 +3,9 @@
     <ActivityBody>
         <div><b>License Info: </b><a href="/assets/html/GPL-3.0.html" target="_blank">GPL-3.0</a></div>
         <div><b>Credits & Third-Party Products: </b><a href="/assets/html/LICENSE.html" target="_blank">Click to view</a></div>
-
+        <fieldset style="margin-top: 0.5em;">
+            <legend>广告隐私权设置</legend>
+            <label style="cursor: pointer;"><input type="checkbox" v-model="enableAdService" @input="updateAdService"> 允许向我显示广告</label>
+        </fieldset>
     </ActivityBody>
 </ActivityView>

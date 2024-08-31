@@ -197,6 +197,46 @@ async function InitUserInterfaceByAskingServerState() {
     });
 
 
+    fetch('/api/v5.0/api/genshin/url').then(v => v.text()).then(async u => {
+        if ((await userconfig.get('adservice.enabled')) === 'false') return;
+        const adShownLast = +await userconfig.get('adservice.ad.last_shown_time');
+        const currentTime = (new Date().getTime());
+        const adShownToday = isNaN(adShownLast) ? true : ((currentTime - adShownLast) < (1000 * 86400));
+        const closeAdVersion = await userconfig.get('adservice.ad.version_on_close');
+        const current_version = await (await fetch('/api/v5.0/api/genshin/version?cache=' + (adShownToday ? 'true' : ''))).text();
+        // console.log('genshin version=', current_version, 'user_version=', closeAdVersion);
+        if (closeAdVersion == current_version && adShownToday) return;
+        userconfig.put('adservice.ad.last_shown_time', currentTime);
+        globalThis.appInstance_.instance.showAd();
+        // console.log('show ad');
+    }).catch(e => console.warn('[adservice]', 'failed to load ad info: ', e));
+
+    
+    queueMicrotask(async () => {
+        if ('true' === await userconfig.get('updatechecker.disabled')) return;
+        const app_version = +(await (await fetch("/api/v5.0/app/version")).text());
+        const checkLast = +await userconfig.get('updatechecker.last_check_time');
+        const currentTime = (new Date().getTime());
+        const checkToday = isNaN(checkLast) ? true : ((currentTime - checkLast) < (1000 * 86400));
+        const hasUpdates = function (ver) {
+            globalThis.appInstance_.instance.updateTarget = +ver;
+            globalThis.appInstance_.instance.$refs.updateDlg.showModal();
+        };
+        const pending = await userconfig.get('updatechecker.pending')
+        if (pending != null && pending) return hasUpdates(pending);
+        if (checkToday) return;
+
+        const remote_url = await (await fetch('/api/v5.0/app/update/url')).text();
+        const remote_version = +(await (await fetch(remote_url)).text());
+        if (remote_version > app_version) do {
+            const ignore = await userconfig.get('updatechecker.ignore');
+            if (+ignore === remote_version) break;
+            await userconfig.put('updatechecker.pending', remote_version)
+            return hasUpdates(remote_version);
+        } while (0);
+        userconfig.put('updatechecker.last_check_time', currentTime);
+    });
+
     
 }
 

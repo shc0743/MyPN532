@@ -22,6 +22,7 @@ const UtilitiesView = defineAsyncComponent(async () => (await import('../Utiliti
 const DumpsView = defineAsyncComponent(async () => (await import('../DumpsView/DumpsView.js')).default);
 const DumpEditor = defineAsyncComponent(async () => (await import('../DumpEditor/DumpEditor.js')).default);
 const AboutPage = defineAsyncComponent(async () => (await import('../AboutPage/AboutPage.js')).default);
+const AdService = defineAsyncComponent(async () => (await import('../AdService/AdService.js')).default);
 
 
 
@@ -40,6 +41,7 @@ const data = {
             advancedUser: true,
             advancedUserOptions: '1',
             showGuide: false,
+            updateTarget: 0,
         };
     },
 
@@ -53,7 +55,7 @@ const data = {
         DumpsView,
         DumpEditor,
         NdefCenter,
-
+        AdService,
     },
 
     computed: {
@@ -114,6 +116,37 @@ const data = {
                     if (!v.ok) throw v.status + v.statusText;
                     ElMessage.success('成功!')
                 }).catch(e => ElMessage.error('失败: ' + e));  
+        },
+        showAd() {
+            this.$refs.adService.show();
+        },
+        async updateapi(value) {
+            if (value === 0) {
+                return this.$refs.updateDlg.close();
+            }
+            if (value === 2) {
+                userconfig.put('updatechecker.pending', null);
+                userconfig.put('updatechecker.ignore', this.updateTarget);
+                return this.$refs.updateDlg.close();
+            }
+            if (value === 1) {
+                const remote_url = await (await fetch('/api/v5.0/app/update/release')).text();
+                window.open(remote_url, '_blank', { width: 640, height: 480 });
+                this.$refs.updateDlg.close();
+                ElMessageBox.confirm('是否退出应用程序，以便进行更新？', '更新程序', {
+                    confirmButtonText: '立即退出',
+                    cancelButtonText: '稍后退出',
+                    type: 'info',
+                }).then(() => {
+                    fetch('/api/v4.8/app/exit', { method: 'POST' }).then(v => {
+                        window.close();
+                        setTimeout(() => document.write('<h1>应用程序已退出'), 1000);
+                    }).catch(error => {
+                        ElMessage.error('无法退出应用程序: ' + error);
+                    })
+                }).catch(() => {
+                });
+            }
         },
         
     },

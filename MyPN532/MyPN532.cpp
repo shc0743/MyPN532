@@ -288,8 +288,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		app.setLogPath("./logs")
 			.setLogLevel(trantor::Logger::kWarn)
 			.setUploadPath(s_upload)
-			.setDefaultHandler(sWebRootHandler)
 			.setDocumentRoot(s_webroot)
+			.setDefaultHandler(sWebRootHandler)
 			//.addALocation("/")
 #define signlethread
 #undef signlethread

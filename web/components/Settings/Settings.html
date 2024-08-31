@@ -78,15 +78,19 @@
         </ElCard>
         <ElCard style="margin-top: 1em;">
             <!-- <template #header></template> -->
-            <!-- <div> -->
+            <div>
                 <!-- <b>当前模式:</b>
                 <span style="margin: 0 0.5em;">{{isAdvancedUser?'高级模式':'基本模式'}}</span> -->
                 <!-- 消灭bug的最快方法就是砍掉出现bug的功能 -->
                 应用程序模式: <a href="#" @click.prevent="changeappmode">更改...</a>
-            <!-- </div> -->
+            </div>
+            <div style="display: flex; align-items: center;">检查更新: <ElCheckbox style="margin: 0 0.5em;" v-model=allowUpdates>允许检查更新</ElCheckbox><ElButton text @click="updateUpdatingPolicy">保存偏好</ElButton></div>
         </ElCard>
         <ElCard style="margin-top: 1em;">
             关于: <a href="#/about/">关于...</a>
+        </ElCard>
+        <ElCard style="margin-top: 1em;">
+            内部版本号: <span v-text="internal_version"></span>
         </ElCard>
     </ActivityBody>
 </ActivityView>

@@ -768,6 +768,74 @@ void server::MainServer::lockufuid(const HttpRequestPtr& req, std::function<void
 	callback(resp);
 }
 
+void server::MainServer::appversion(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	constexpr ULONGLONG app_version =
+#include "../version.txt"
+		;
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	resp->setBody(to_string(app_version));
+	callback(resp);
+}
+
+void server::MainServer::updateurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	HttpResponsePtr resp = HttpResponse::newFileResponse("webroot/assets/static/update_url");
+	CORSadd(req, resp);
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	callback(resp);
+}
+
+void server::MainServer::updaterel(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	HttpResponsePtr resp = HttpResponse::newFileResponse("webroot/assets/static/update_release");
+	CORSadd(req, resp);
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	callback(resp);
+}
+
+void server::MainServer::getgenshinurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	resp->setBody(ConvertUTF16ToUTF8(L"https://genshin.hoyoverse.com/"));
+	callback(resp);
+}
+
+void server::MainServer::getgenshinversion(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+#pragma region MyRegion
+	const wchar_t* GAMEBRANCHURL = L"https://sg-hyp-api.hoyoverse.com/hyp/hyp-connect/api/getGameBranches?game_ids[]=gopR6Cufr3&launcher_id=VYTpXlbWo8";
+#pragma endregion
+	string version;
+	if (!file_exists(L"cache/branch.web") || req->getParameter("cache") != "true") {
+		DeleteFileW(L"cache/branch.web");
+		Process.StartAndWait(L"bin/self/download "s + GAMEBRANCHURL + L" cache/branch.web --silent");
+	}
+	char buf[2048]{};
+	{
+		ifstream fp("cache/branch.web");
+		fp.read(buf, 2048);
+		fp.close();
+	}
+	Json::Value root;
+	Json::Reader reader;
+	bool parsingSuccessful = reader.parse(buf, root);
+	if (!parsingSuccessful) {
+		throw std::exception("Failed parsing JSON");
+	}
+	version = root["data"]["game_branches"][0]["main"]["tag"].asString();
+
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	resp->setBody(version);
+	callback(resp);
+}
+
 
 
 
