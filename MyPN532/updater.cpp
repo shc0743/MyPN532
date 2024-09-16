@@ -10,6 +10,7 @@ using namespace std;
 #include <iostream>
 #include "resource.h"
 #include "wizard.user.h"
+#include <json/json.h>
 
 #pragma comment(lib, "wininet.lib")  
 
@@ -139,8 +140,10 @@ int UpdaterEntry(CmdLineW& cl) {
 	OpenMprgWizard(hWiz);
 	FreeResFile(IDR_BIN_7z_x64, L"BIN", L"x.exe");
 	MoveFileW(L"../config/userconfig.json", L"../config/U");
+	FileDeleteTreeW(L"../webroot");
 	SetCurrentDirectoryW(L"../../");
-	auto pi = Process.Start_HiddenWindow(GetProgramPathW() + L"/x x -y update.pkg ");
+	auto pi = Process.Start_HiddenWindow(L"\"" + GetProgramPathW() +
+		L"/x\" x -y \"" + GetProgramPathW() + L"/update.pkg\" ");
 	WaitForSingleObject(pi.hProcess, INFINITE);
 	DWORD exitcode = 0;
 	GetExitCodeProcess(pi.hProcess, &exitcode);
@@ -150,7 +153,45 @@ int UpdaterEntry(CmdLineW& cl) {
 	CopyFileW(L"../config/U", L"../config/userconfig.json", FALSE);
 	DeleteFileW(L"../config/u~g.bak");
 	MoveFileW(L"../config/U", L"../config/u~g.bak");
+
+	do {
+		Json::Value root;
+		Json::Reader reader;
+		std::string filePath = "../config/userconfig.json";
+		bool fileExists = file_exists(filePath);
+		if (fileExists) {
+			if (MyGetFileSizeW(s2ws(filePath)) > static_cast<unsigned long long>(64 * 1024) * 1024) {
+				// json file > 64MiB
+				break;
+			}
+			std::ifstream file(filePath);
+			if (!file.is_open()) {
+				break;
+			}
+			std::stringstream buffer;
+			buffer << file.rdbuf();
+			file.close();
+			bool parsingSuccessful = reader.parse(buffer.str(), root);
+			if (!parsingSuccessful) {
+				break;
+			}
+		}
+		root.removeMember("updatechecker.pending");
+
+		Json::StreamWriterBuilder builder;
+		builder["indentation"] = "  ";
+		std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
+		std::ostringstream oss;
+		writer->write(root, &oss);
+		std::ofstream outFile(filePath);
+		if (!outFile.is_open()) {
+			break;
+		}
+		outFile << oss.str();
+		outFile.close();
+	} while (0);
 	
+	DeleteFileW(L"x.exe");
 	if (exitcode) {
 		TaskDialog(NULL, NULL, L"MyPN532 Standard Updater",
 			L"An error has occurred during the update progress.",
@@ -167,7 +208,6 @@ int UpdaterEntry(CmdLineW& cl) {
 			TDCBF_YES_BUTTON | TDCBF_CANCEL_BUTTON, TD_INFORMATION_ICON, &l);
 		if (l == IDYES) Process.StartOnly(L"../../MyPN532_x64.exe");
 	}
-	DeleteFileW(L"x.exe");
 	DeleteFileW(L"update.pkg");
 	FreeResFile(IDR_BIN_SELF_DELETE, L"BIN", L"d.bat");
 	Process.StartOnly_HiddenWindow(L"cmd /c d.bat \"" + GetProgramDirW() + L"\"");

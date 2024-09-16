@@ -20,7 +20,7 @@
         <div class="el-notification__content">
             <p v-text="periodText"></p>
         </div>
-        <ElTooltip placement="bottom" effect="dark" content="暂时隐藏">
+        <ElTooltip placement="left" effect="dark" content="暂时隐藏">
             <ElButton text class="el-icon el-notification__closeBtn" @keydown.capture.stop @click.stop="() => { showBalloon = true; showTask = false; }">
                 <Close />
             </ElButton>
