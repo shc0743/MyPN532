@@ -66,7 +66,7 @@ const data = {
                 this.allowUpdates = 'true' !== await userconfig.get('updatechecker.disabled');
                 const defaultdeviceresp = await fetch('/api/v4.8/nfc/defaultdevice');
                 if (defaultdeviceresp.headers.get('x-device-not-recognized') === 'true') {
-                    this.cfgDefaultDevice = '无法连接，可能是由于设备未插入或更换了USB插口，详情请把鼠标放到此处查看|如果设备未插入，请插入设备然后刷新页面；如果是更换了USB口，请重新扫描设备';
+                    this.cfgDefaultDevice = '无法连接，可能是由于设备未插入或更换了USB插口，详情请把鼠标放到此处查看|如果设备未插入，请插入设备然后刷新页面；如果是更换了USB口，请重新扫描设备；原设备：' + await defaultdeviceresp.text();
                 } else {
                     this.cfgDefaultDevice = await defaultdeviceresp.text();
                 }
@@ -166,7 +166,10 @@ const data = {
             globalThis.appInstance_.instance.$refs.advancedUserDlg.showModal();
         },
         updateUpdatingPolicy() {
-            userconfig.put('updatechecker.disabled', !this.allowUpdates).then(() => ElMessage.success('更新偏好已保存。'));
+            userconfig.put('updatechecker.disabled', !this.allowUpdates).then(() => ElMessage.success('更新偏好已保存。')).catch(e => {
+                this.allowUpdates = !this.allowUpdates;
+                ElMessage.error('更新偏好保存失败！' + e);
+            })
         },
     },
 

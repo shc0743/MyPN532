@@ -60,6 +60,8 @@ namespace server {
 			ADD_METHOD_TO(server::MainServer::appversion, "/api/v5.0/app/version", Get, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::updateurl, "/api/v5.0/app/update/url", Get, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::updaterel, "/api/v5.0/app/update/release", Get, Options, "server::AuthFilter");
+			ADD_METHOD_TO(server::MainServer::updateserviceprovider, "/api/v5.0/app/update/service_provider", Get, Options, "server::AuthFilter");
+			ADD_METHOD_TO(server::MainServer::updateurlconstruct, "/api/v5.0/app/update/construct", Post, Options, "server::AuthFilter");
 			
 			ADD_METHOD_TO(server::MainServer::getgenshinurl, "/api/v5.0/api/genshin/url", Get, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::getgenshinversion, "/api/v5.0/api/genshin/version", Get, Options, "server::AuthFilter");
@@ -94,6 +96,8 @@ namespace server {
 		void appversion(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void updateurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void updaterel(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		void updateserviceprovider(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		void updateurlconstruct(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		
 		void getgenshinurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void getgenshinversion(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;

@@ -4,7 +4,7 @@
         position: fixed;
         right: 10px;
         bottom: 10px;
-        z-index: 99;
+        z-index: 2001;
         background-color: white;
         border: 1px solid #ccc;
         border-radius: 10px;
@@ -14,13 +14,14 @@
         cursor: pointer;
         min-width: 250px;
         min-height: 100px;
+        transition: 0.1s;
     }div>>>:hover {
         background-color: #f0f0f0;
     }div>>>:active {
         background-color: #d0d0d0;
     }</style>
     <div style="display: flex; justify-content: space-between;"><b>《原神》{{ver}}版本上线！</b><a href="#" @click.prevent.stop="close">x</a></div>
-    <div style="flex: 1;"><a href="#" @click.prevent>点击查看&gt;&gt;&gt;</a></div>
+    <div style="flex: 1;"><a href="javascript:" @click.prevent>点击查看&gt;&gt;&gt;</a></div>
     <div style="margin-top: 0.5em;"><span style="color: gray; font-size: small;">广告</span></div>
 </div>
 </Teleport>

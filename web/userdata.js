@@ -13,7 +13,7 @@ globalThis.userconfig = Object.create({
     },
     async getobject(key) {
         try {
-            return JSON.parse(this.get(key));
+            return JSON.parse(await this.get(key));
         } catch { return new Object }
     },
     async put(key, body) {
@@ -25,13 +25,11 @@ globalThis.userconfig = Object.create({
                 body,
             })).text();
         } catch (error) {
-            return null
+            throw error
         }
     },
     async putobject(key, body) {
-        try {
-            return this.put(key, body);
-        } catch { return new Object }
+        return await  this.put(key, body);
     },
 });
 

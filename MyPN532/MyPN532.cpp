@@ -12,6 +12,7 @@
 #pragma comment(lib, "MyProgressWizardLib64.lib")
 
 #include "server.h"
+#include "updater.hpp"
 
 HINSTANCE hInst;
 using namespace std;
@@ -472,6 +473,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		DeleteMprgObject(hObj);
 		return 0;
+	}
+
+	if (type == L"standard-updater") {
+		return UpdaterEntry(cl);
 	}
 
 

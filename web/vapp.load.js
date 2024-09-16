@@ -106,8 +106,8 @@ function StartWebConversation() {
         const fatal = globalThis.appInstance_.isRunning == true;
         clearInterval(timeoutTestId);
         console[fatal ? 'error' : 'info']('[ws]', 'Connection closed.');
+        globalThis.appInstance_.instance.is_connected = false
         if (fatal) {
-            globalThis.appInstance_.instance.is_connected = false
             ElMessageBox.alert('与服务器的连接已丢失。', '连接断开', { type: 'error', confirmButtonText: '重新连接服务器' })
                 .finally(() => location.reload());
         }
@@ -131,6 +131,17 @@ function StartWebConversation() {
         arr.delete(func);
         ws.h.set(type, arr);
     }
+
+    ws.registerHandler('application-quit', () => {
+        globalThis.appInstance_.isRunning = false;
+        ElMessageBox.alert('应用程序已退出。', '应用程序退出', { type: 'success', confirmButtonText: '关闭' })
+            .finally(() => {
+                window.close();
+                setTimeout(() => {
+                    document.write('<h1>应用程序已退出。</h1>')
+                }, 100);
+            });
+    });
 
     ws.registerSessionHandler = function (sessionId, func) {
         sessionId = +sessionId;
@@ -219,8 +230,8 @@ async function InitUserInterfaceByAskingServerState() {
         const currentTime = (new Date().getTime());
         const checkToday = isNaN(checkLast) ? true : ((currentTime - checkLast) < (1000 * 86400));
         const hasUpdates = function (ver) {
-            globalThis.appInstance_.instance.updateTarget = +ver;
-            globalThis.appInstance_.instance.$refs.updateDlg.showModal();
+            globalThis.appInstance_.updater.updateTarget = +ver;
+            globalThis.appInstance_.updater.updateapi(3);
         };
         const pending = await userconfig.get('updatechecker.pending')
         if (pending != null && pending) return hasUpdates(pending);

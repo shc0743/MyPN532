@@ -8,6 +8,7 @@ using namespace std;
 
 string app_token;
 size_t appConnectedTimes;
+set<WebSocketConnectionPtr> appConnections;
 
 
 void server::AuthFilter::doFilter(const HttpRequestPtr& req, FilterCallback&& fcb, FilterChainCallback&& fccb)
@@ -124,6 +125,11 @@ void server::MainServer::exitimmediate(const HttpRequestPtr& req, std::function<
 	resp->setStatusCode(k204NoContent);
 	if (req->method() == Options) return callback(resp);
 
+	for (auto& i : appConnections) {
+		if (!i) continue;
+		i->send("{\"type\":\"application-quit\"}");
+		i->shutdown(CloseCode::kEndpointGone, "application_quit");
+	}
 	drogon::app().quit();
 
 	return callback(resp);
@@ -782,7 +788,9 @@ void server::MainServer::appversion(const HttpRequestPtr& req, std::function<voi
 
 void server::MainServer::updateurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
 {
-	HttpResponsePtr resp = HttpResponse::newFileResponse("webroot/assets/static/update_url");
+	string file = "webroot/assets/static/update_url";
+	if (req->getParameter("type") == "pkg") file += "_pkg";
+	HttpResponsePtr resp = HttpResponse::newFileResponse(file);
 	CORSadd(req, resp);
 	resp->setContentTypeCode(CT_TEXT_PLAIN);
 	callback(resp);
@@ -796,12 +804,65 @@ void server::MainServer::updaterel(const HttpRequestPtr& req, std::function<void
 	callback(resp);
 }
 
-void server::MainServer::getgenshinurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+void server::MainServer::updateserviceprovider(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	HttpResponsePtr resp = HttpResponse::newFileResponse("webroot/assets/static/update_service_provider");
+	CORSadd(req, resp);
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	callback(resp);
+}
+
+void server::MainServer::updateurlconstruct(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
 {
 	HttpResponsePtr resp = HttpResponse::newHttpResponse();
 	CORSadd(req, resp);
 	resp->setContentTypeCode(CT_TEXT_PLAIN);
-	resp->setBody(ConvertUTF16ToUTF8(L"https://genshin.hoyoverse.com/"));
+	if (req->method() == Options) return callback(resp);
+
+	string data = req->bodyData();
+	string tem;
+	{
+		char buf[1024]{};
+		ifstream fp("webroot/assets/static/update_url_template");
+		fp.read(buf, 1024);
+		fp.close();
+		tem = buf;
+	}
+	str_replace(tem, "{}", data);
+	resp->setBody(tem);
+
+	callback(resp);
+}
+
+void server::MainServer::getgenshinurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	static int sessUser = 0;
+#pragma region MyRegion
+	const wchar_t* APIURL = L"https://geoip-js.com/geoip/v2.1/country/me?referrer=file%3A%2F%2F";
+#pragma endregion
+	if (!sessUser) {
+		DeleteFileW(L"cache/location.web");
+		Process.StartAndWait(L"bin/self/download "s + APIURL + L" cache/location.web --silent");
+		char* buf = new char[16384];
+		{
+			ifstream fp("cache/location.web");
+			fp.read(buf, 16384);
+			fp.close();
+		}
+		Json::Value root;
+		Json::Reader reader;
+		bool parsingSuccessful = reader.parse(buf, root);
+		if (!parsingSuccessful) {
+			throw std::exception("Failed parsing JSON");
+		}
+		delete[] buf;
+		LOG_INFO << "Country code: " << root["country"]["iso_code"].asString();
+		sessUser = (root["country"]["iso_code"].asString() == "CN") ? 1 : 2;
+	}
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	resp->setBody(ConvertUTF16ToUTF8(sessUser == 1 ? L"https://ys.mihoyo.com/" : L"https://genshin.hoyoverse.com/"));
 	callback(resp);
 }
 

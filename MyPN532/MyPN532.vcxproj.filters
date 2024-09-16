@@ -36,9 +36,18 @@
     <ClCompile Include="..\..\resource\tool.cpp">
       <Filter>TOOL文件</Filter>
     </ClCompile>
+    <ClCompile Include="updater.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="deleteWithSelf.bat">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="7za64.exe">
+      <Filter>资源文件</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ctls.h">
@@ -55,6 +64,9 @@
     </ClInclude>
     <ClInclude Include="..\..\resource\tool.h">
       <Filter>TOOL文件</Filter>
+    </ClInclude>
+    <ClInclude Include="updater.hpp">
+      <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

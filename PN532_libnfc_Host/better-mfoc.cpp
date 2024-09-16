@@ -1155,6 +1155,13 @@ int nfc_bettermfoc(CmdLineW & cl) {
             trailer_block(block) ? i-- : i;
             failure = true;
 
+            if (useDumpSectors) {
+                int sector = block / 4;
+                if (!dumpSectors.contains(sector)) continue;
+            }
+
+            if (block % 16 == 0) fflush(stdout);
+
             // Try A key, auth() + read()
             memcpy(mp.mpa.abtKey, t.sectors[i].KeyA, sizeof(t.sectors[i].KeyA));
             int res;
@@ -1169,6 +1176,7 @@ int nfc_bettermfoc(CmdLineW & cl) {
             else { // and Read
                 if ((res = nfc_initiator_mifare_cmd(r.pdi, MC_READ, block, &mp)) >= 0) {
                     //fprintf(stdout, "Block %02d, type %c, key %012llx :\n", block, 'A', bytes_to_num(t.sectors[i].KeyA, 6));
+                    fprintf(stdout, "Block %02d, type %c\n", block, 'A');
                     //print_hex(mp.mpd.abtData, 16);
                     mf_configure(r.pdi);
                     mf_select_tag(r.pdi, &(t.nt));
@@ -1193,7 +1201,8 @@ int nfc_bettermfoc(CmdLineW & cl) {
                     }
                     else { // and Read
                         if ((res = nfc_initiator_mifare_cmd(r.pdi, MC_READ, block, &mp)) >= 0) {
-                            fprintf(stdout, "Block %02d, type %c, key %012llx \n", block, 'B', bytes_to_num(t.sectors[i].KeyB, 6));
+                            //fprintf(stdout, "Block %02d, type %c, key %012llx \n", block, 'B', bytes_to_num(t.sectors[i].KeyB, 6));
+                            fprintf(stdout, "Block %02d, type %c\n", block, 'B');
                             //print_hex(mp.mpd.abtData, 16);
                             mf_configure(r.pdi);
                             mf_select_tag(r.pdi, &(t.nt));
@@ -1221,6 +1230,7 @@ int nfc_bettermfoc(CmdLineW & cl) {
             memcpy(mp.mpa.abtAuthUid, t.nt.nti.nai.abtUid + t.nt.nti.nai.szUidLen - 4, sizeof(mp.mpa.abtAuthUid));
         }
 
+        printf("Writing dump... \n");
         // Finally save all keys + data to file
         uint16_t dump_size = (t.num_blocks + 1) * 16;
         if (fwrite(&mtDump, 1, dump_size, pfDump) != dump_size) {
@@ -1241,6 +1251,7 @@ int nfc_bettermfoc(CmdLineW & cl) {
     // Disconnect device and exit
     nfc_close(r.pdi);
     nfc_exit(context);
+    printf("\n");
     return(succeed ? EXIT_SUCCESS : 1);
 }
 

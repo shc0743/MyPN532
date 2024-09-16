@@ -1,0 +1,1 @@
+int UpdaterEntry(CmdLineW& cl);

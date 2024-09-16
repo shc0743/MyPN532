@@ -158,8 +158,11 @@ const data = {
 
             try {
                 if (this.writeUid.length !== 8) throw 'UID长度不正确。此功能仅支持 Mifare Classic S50 (1K) 标签，该卡种UID长度为4字节（8个字符）';
+                this.page = 3;
                 const filename = (await m1_perform_action(ACTION_READ, {}, () => { }, {
                     use_mfoc: true,
+                    sectors: '0',
+                    keyfiles: this.userkeyfile.sort().join('|'),
                 }));
                 const url = new URL('/api/v4.8/api/dumpfile', location.href);
                 url.searchParams.append('filename', filename);

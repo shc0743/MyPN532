@@ -165,9 +165,12 @@
     <ClCompile Include="MyPN532.cpp" />
     <ClCompile Include="server-ws.cpp" />
     <ClCompile Include="server.cpp" />
+    <ClCompile Include="updater.cpp" />
     <ClCompile Include="检测端口是否被占用.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="7za64.exe" />
+    <None Include="deleteWithSelf.bat" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -175,6 +178,7 @@
     <ClInclude Include="ctls.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="server.h" />
+    <ClInclude Include="updater.hpp" />
     <ClInclude Include="检测端口是否被占用.hpp" />
   </ItemGroup>
   <ItemGroup>

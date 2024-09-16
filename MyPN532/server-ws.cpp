@@ -80,9 +80,16 @@ public:
 	wstring reset_newuid;
 	wstring internalDataProvider;
 };
+class wsNativeNfcApiData_RunUpdater {
+public:
+	wsNativeNfcApiData_RunUpdater() = default;
+	wstring downurl;
+	bool failure;
+};
 
 
 extern size_t appConnectedTimes;
+extern set<WebSocketConnectionPtr> appConnections;
 
 
 
@@ -99,6 +106,7 @@ void WebSocketService::handleNewConnection(const HttpRequestPtr& req, const WebS
 	//write your application logic here
 
 	++::appConnectedTimes;
+	appConnections.emplace(wsConnPtr);
 
 	LOG_DEBUG << "[ws] connected " << req->peerAddr().toIpPort() << ", session token=";
 }
@@ -107,6 +115,7 @@ void WebSocketService::handleConnectionClosed(const WebSocketConnectionPtr& wsCo
 	//write your application logic here
 
 	--appConnectedTimes;
+	appConnections.erase(wsConnPtr);
 	CloseHandleIfOk(CreateThread(0, 0, [](PVOID)->DWORD {
 		Sleep(5000);
 		if (!::appConnectedTimes) {
@@ -129,6 +138,9 @@ DWORD WINAPI wsNativeReadNfcMfClassic(PVOID pConnInfo);
 
 map<WS_SESSIONID, wsNativeNfcApiData_WriteMifare> wsSessionIdData_WriteMifare;
 DWORD WINAPI wsNativeWriteNfcMfClassic(PVOID pConnInfo);
+
+map<WS_SESSIONID, wsNativeNfcApiData_RunUpdater> wsSessionIdData_RunUpdater;
+DWORD WINAPI wsNativeRunUpdater(PVOID pConnInfo);
 
 
 
@@ -322,6 +334,23 @@ static void wsProcessMessage(const WebSocketConnectionPtr& wsConnPtr, std::strin
 			return;
 		}
 
+		if (type == "run-updater") {
+			WS_SESSIONID sessionId = json["sessionId"].asUInt64();
+			Json::Value val;
+			val["success"] = false;
+			val["sessionId"] = sessionId;
+			val["code"] = 0;
+			wsNativeNfcApiData_RunUpdater ad;
+			ad.downurl = ConvertUTF8ToUTF16( json["updateUrl"].asString() );
+			wsSessionIdData_RunUpdater.insert(std::make_pair(sessionId, ad));
+			val["success"] = CloseHandleIfOk(CreateThread(0, 0,
+				wsNativeRunUpdater, (PVOID)sessionId, 0, 0));
+
+			Json::FastWriter fastWriter;
+			wsConnPtr->send(fastWriter.write(val));
+			return;
+		}
+
 #undef declare_bool_data
 
 		throw "No handler found with type " + type;
@@ -372,7 +401,12 @@ bool wsSessionSessionEnd(WS_SESSIONID sessionId) {
 	try {
 		WebSocketConnectionPtr ptr = wsSessionIdPtr.at(sessionId);
 		wsSessionIdPtr.erase(sessionId);
-		wsSessionIdData_ReadMifare.erase(sessionId);
+		if (wsSessionIdData_ReadMifare.contains(sessionId))
+			wsSessionIdData_ReadMifare.erase(sessionId);
+		if (wsSessionIdData_WriteMifare.contains(sessionId))
+			wsSessionIdData_WriteMifare.erase(sessionId);
+		if (wsSessionIdData_RunUpdater.contains(sessionId))
+			wsSessionIdData_RunUpdater.erase(sessionId);
 		Json::Value val;
 		val["type"] = "session-ended";
 		val["sessionId"] = sessionId;
@@ -1619,6 +1653,107 @@ DWORD __stdcall wsNativeWriteNfcMfClassic(PVOID pConnInfo) {
 	cleanPipe1();
 	return 0;
 }
+
+
+
+
+
+
+
+DWORD __stdcall wsNativeRunUpdater(PVOID pConnInfo) {
+	WS_SESSIONID sessionId = (WS_SESSIONID)pConnInfo;
+	WebSocketConnectionPtr ptr;
+	wsNativeNfcApiData_RunUpdater* data = nullptr;
+	try {
+		ptr = wsSessionIdPtr.at(sessionId);
+		data = &wsSessionIdData_RunUpdater.at(sessionId);
+		if (!ptr || !data) throw - 1;
+	}
+	catch (...) {
+		return 87l;
+	}
+	static bool hasAnother = false;
+	if (hasAnother) {
+		SERVER_EVENT_BEGIN("action-ended");
+		SERVER_EVENT_SET_PARAMETER(success, false);
+		SERVER_EVENT_SET_PARAMETER(reason, "Has another updater");
+		SERVER_EVENT_END();
+		wsSessionSessionEnd(sessionId);
+		return 5;
+	}
+	hasAnother = true;
+
+
+	wstring pipe; string ansi;
+	DWORD dwCode = -1;
+	size_t pipeId = sessionId;
+	pipe = L"\\\\.\\pipe\\" + s2ws(app_token) +
+		L".updater.download" + to_wstring(pipeId) + L".progress";
+
+	HANDLE hThread = NULL;
+	auto rlcb = [](string& ansi, PVOID pvoid) { // Run Log CallBack
+		WS_SESSIONID sessionId = (WS_SESSIONID)pvoid;
+		if (ansi == "FAIL") {
+			wsNativeNfcApiData_RunUpdater* data = nullptr;
+			try {
+				data = &wsSessionIdData_RunUpdater.at(sessionId);
+				if (data) data->failure = true;
+			}
+			catch (...) {}
+			SERVER_EVENT_BEGIN("action-ended");
+			SERVER_EVENT_SET_PARAMETER(success, false);
+			SERVER_EVENT_SET_PARAMETER(reason, "Download failure");
+			SERVER_EVENT_END();
+		}
+		wstring data = s2ws(ansi);
+
+		SERVER_EVENT_BEGIN("progress");
+		SERVER_EVENT_SET_PARAMETER(progress, ConvertUTF16ToUTF8(data));
+		SERVER_EVENT_END();
+	};
+	SECURITY_ATTRIBUTES sa{
+		.nLength = sizeof(sa),
+		.bInheritHandle = TRUE,
+	};
+	HANDLE hEvent = CreateEventW(&sa, TRUE, FALSE, 0);
+	assert(hEvent); if (!hEvent) throw std::bad_alloc();
+	if (pipeutil::CreateAndReadPipeAsync(pipe, &ansi, hThread, rlcb, (PVOID)sessionId)) {
+		CopyFileW(GetProgramDirW().c_str(), L"temp/updater_beta", FALSE);
+		wstring cmd = L"--type=standard-updater --download=\"" +
+			data->downurl + L"\" --pipe=" + pipe + L" --event=" + to_wstring((LONGLONG)hEvent);
+		PROCESS_INFORMATION pi{}; STARTUPINFOW si{ .cb = sizeof(si) };
+		PWSTR pwstr = new wchar_t[cmd.size() + 1];
+		wcscpy_s(pwstr, cmd.size() + 1, cmd.data());
+		(void)CreateProcessW(L"temp/updater_beta", pwstr, 0, 0, 1, 0, 0, 0, &si, &pi);
+		delete[] pwstr;
+		if (!pi.hProcess) {
+			Process.CloseProcessHandle(pi);
+			SERVER_EVENT_BEGIN("action-ended");
+			SERVER_EVENT_SET_PARAMETER(success, false);
+			SERVER_EVENT_SET_PARAMETER(reason, (ULONGLONG)GetLastError());
+			SERVER_EVENT_END();
+			CloseHandleIfOk(CreateFileW(pipe.c_str(), GENERIC_ALL, 0, 0, OPEN_EXISTING, 0, 0));
+			return 1;
+		}
+		CloseHandle(pi.hThread); CloseHandle(pi.hProcess);
+
+		WaitForSingleObject(hEvent, 86400 * 1000);
+		CloseHandle(hEvent);
+	}
+	if (hThread) {
+		WaitForSingleObject(hThread, 60000);
+		CloseHandle(hThread);
+	}
+	
+	SERVER_EVENT_BEGIN("action-ended");
+	SERVER_EVENT_SET_PARAMETER(success, !data->failure);
+	SERVER_EVENT_END();
+	if (data->failure) hasAnother = false;
+
+	wsSessionSessionEnd(sessionId);
+	return 0;
+}
+
 
 
 

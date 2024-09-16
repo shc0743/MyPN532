@@ -1,0 +1,34 @@
+<update-widget v-deep v-if="hasUpdates" class="el-notification right" :style="{paddingBottom:hasUpdates===2?'0px':undefined,top:'16px','--el-notification-width':'max-content','--el-notification-padding':'1em',display:'block'}">
+    <div style="font-weight: bold; font-size: x-large; text-align: center;">检测到应用程序更新</div>
+    <div style="margin-top: 0.5em;">
+        <div v-text="updateVersion || '正在加载版本信息...'"></div>
+        <div v-if="updateVersion"><a :href="updateDetailUrl" target="_blank" referrerpolicy="no-referrer">在 {{updateSourceName}} 上 查看发行说明</a></div>
+        <div style="color: gray; margin-top: 0.5em;">内部版本号: {{updateTarget}}</div>
+    </div>
+    <div style="margin-top: 0.5em; display: flex;">
+        <ElButton style="flex: 1;" @click="updateapi(1)" plain type="primary">立即更新 (更新期间可以继续使用应用程序)</ElButton>
+    </div>
+    <div style="margin-top: 0.5em; display: flex;">
+        <ElButton style="flex: 1;" @click="updateapi(2)" plain type="danger">忽略该版本</ElButton>
+        <ElButton style="flex: 1;" @click="updateapi(0)" plain type="info">暂不更新</ElButton>
+    </div>
+</update-widget>
+
+<update-widget v-deep v-if="task && showTask" class="el-notification right" :style="{top:'16px','--el-notification-width':'max-content','--el-notification-padding':'1em',display:'block',zIndex:'999'}">
+    <div class="el-notification__group" style="margin-bottom: 0.5em; min-width: 330px;">
+        <h2 class="el-notification__title">正在更新应用程序...</h2>
+        <div class="el-notification__content">
+            <p v-text="periodText"></p>
+        </div>
+        <ElTooltip placement="bottom" effect="dark" content="暂时隐藏">
+            <ElButton text class="el-icon el-notification__closeBtn" @keydown.capture.stop @click.stop="() => { showBalloon = true; showTask = false; }">
+                <Close />
+            </ElButton>
+        </ElTooltip>
+    </div>
+    <ElProgress :min="0" :max="100" :percentage="download_progress" />
+</update-widget>
+
+<ElButton v-deep v-if="task && showBalloon" style="position: fixed; right: 10px; top: 40px; z-index: 3001;" round @click="() => { showBalloon = false; showTask = true; }">
+    <ElIcon><Download /></ElIcon>
+</ElButton>

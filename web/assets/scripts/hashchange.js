@@ -62,5 +62,11 @@ export default {
     "#/about/"(hash) {
         this.$data.current_page = 'about';
     },
+
+    "#/exit/"(hash) {
+        fetch('/api/v4.8/app/exit', { method: 'POST' }).then(() => close()).catch(e => {})
+        history.replaceState({}, document.title, '#/');
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+    },
     
 };
