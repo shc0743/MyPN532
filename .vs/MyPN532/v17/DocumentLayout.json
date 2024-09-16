@@ -64,7 +64,7 @@
               "RelativeDocumentMoniker": "MyPN532\\updater.cpp",
               "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\updater.cpp",
               "RelativeToolTip": "MyPN532\\updater.cpp",
-              "ViewState": "AQIAAMAAAAAAAAAAAAAQwMgAAAAtAAAA",
+              "ViewState": "AQIAAKgAAAAAAAAAAAAQwK8AAAAKAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-09-16T16:55:10.815Z",
               "EditorCaption": ""
@@ -79,8 +79,7 @@
               "RelativeToolTip": "PN532_libnfc_Host\\better-mfoc.cpp",
               "ViewState": "AQIAAIUEAAAAAAAAAAAiwJwEAAAoAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-08-09T12:26:05.662Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-08-09T12:26:05.662Z"
             },
             {
               "$type": "Document",
@@ -104,8 +103,7 @@
               "RelativeToolTip": "MyPN532\\server.h",
               "ViewState": "AQIAABsAAAAAAAAAAAAAACoAAAAuAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-09-16T14:04:02.054Z",
-              "EditorCaption": ""
+              "WhenOpened": "2024-09-16T14:04:02.054Z"
             },
             {
               "$type": "Document",
