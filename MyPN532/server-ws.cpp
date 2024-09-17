@@ -82,7 +82,7 @@ public:
 };
 class wsNativeNfcApiData_RunUpdater {
 public:
-	wsNativeNfcApiData_RunUpdater() = default;
+	wsNativeNfcApiData_RunUpdater() : failure(false) {};
 	wstring downurl;
 	bool failure;
 };
@@ -1735,13 +1735,18 @@ DWORD __stdcall wsNativeRunUpdater(PVOID pConnInfo) {
 			CloseHandleIfOk(CreateFileW(pipe.c_str(), GENERIC_ALL, 0, 0, OPEN_EXISTING, 0, 0));
 			return 1;
 		}
-		CloseHandle(pi.hThread); CloseHandle(pi.hProcess);
+		CloseHandle(pi.hThread); 
 
-		WaitForSingleObject(hEvent, 86400 * 1000);
+		HANDLE hs[] = { pi.hProcess,hEvent };
+		WaitForMultipleObjects(2, hs, FALSE, 86400 * 1000);
 		CloseHandle(hEvent);
+		CloseHandle(pi.hProcess);
 	}
 	if (hThread) {
-		WaitForSingleObject(hThread, 60000);
+		if (WaitForSingleObject(hThread, 60000) == WAIT_TIMEOUT) {
+#pragma warning(disable: 6258)
+			TerminateThread(hThread, ERROR_TIMEOUT);
+		}
 		CloseHandle(hThread);
 	}
 	
