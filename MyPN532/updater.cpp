@@ -104,7 +104,34 @@ int UpdaterEntry(CmdLineW& cl) {
 	hPipe = CreateFileW(pipe.c_str(), GENERIC_ALL, 0, 0, OPEN_EXISTING, 0, 0);
 
 	SetCurrentDirectoryW(GetProgramPathW().c_str());
+	begin_download:
+	size_t download_retry_count = 0;
 	int err = download_main(download_url, L"update.pkg", L"MyPN532 Updater Version/1.2.0.0", true);
+	if (!err) {
+		// ะฃั้
+		FreeResFile(IDR_BIN_7z_x64, L"BIN", L"x.exe");
+		auto pi = Process.Start_HiddenWindow(L"x t update.pkg");
+		WaitForSingleObject(pi.hProcess, INFINITE);
+		DWORD exitcode = 0;
+		GetExitCodeProcess(pi.hProcess, &exitcode);
+		Process.CloseProcessHandle(pi);
+
+		if (exitcode) {
+			if (download_retry_count++ < 5) {
+				string str = "0";
+				DWORD toW = (DWORD)str.size(), Wd = 0;
+				(void)WriteFile(hPipe, str.data(), toW, &Wd, 0);
+				goto begin_download;
+			}
+			err = 1;
+			string str = "FAIL";
+			DWORD toW = (DWORD)str.size(), Wd = 0;
+			(void)WriteFile(hPipe, str.data(), toW, &Wd, 0);
+			 str = "FAIL=Update package is corrupt";
+			 toW = (DWORD)str.size(), Wd = 0;
+			(void)WriteFile(hPipe, str.data(), toW, &Wd, 0);
+		}
+	}
 	if (err) {
 		string str = "FAIL";
 		DWORD toW = (DWORD)str.size(), Wd = 0;
@@ -135,10 +162,10 @@ int UpdaterEntry(CmdLineW& cl) {
 	HMPRGOBJ hObj = CreateMprgObject();
 	HMPRGWIZ hWiz = CreateMprgWizard(hObj, MPRG_CREATE_PARAMS{
 		.szTitle = L"MyPN532 Standard Updater",
-		.szText = L"Applying updates..."
+		.szText = L"Applying updates...",
+		.max = size_t(-1),
 		});
 	OpenMprgWizard(hWiz);
-	FreeResFile(IDR_BIN_7z_x64, L"BIN", L"x.exe");
 	MoveFileW(L"../config/userconfig.json", L"../config/U");
 	FileDeleteTreeW(L"../webroot");
 	SetCurrentDirectoryW(L"../../");
