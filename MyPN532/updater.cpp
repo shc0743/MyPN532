@@ -104,8 +104,8 @@ int UpdaterEntry(CmdLineW& cl) {
 	hPipe = CreateFileW(pipe.c_str(), GENERIC_ALL, 0, 0, OPEN_EXISTING, 0, 0);
 
 	SetCurrentDirectoryW(GetProgramPathW().c_str());
-	begin_download:
 	size_t download_retry_count = 0;
+	begin_download:
 	int err = download_main(download_url, L"update.pkg", L"MyPN532 Updater Version/1.2.0.0", true);
 	if (!err) {
 		// ะฃั้
