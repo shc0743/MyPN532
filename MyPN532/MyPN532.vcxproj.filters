@@ -74,4 +74,7 @@
       <Filter>资源文件</Filter>
     </ResourceCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\version_common.txt" />
+  </ItemGroup>
 </Project>

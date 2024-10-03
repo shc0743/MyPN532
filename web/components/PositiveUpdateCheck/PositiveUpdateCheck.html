@@ -1,0 +1,14 @@
+<ActivityView v-deep v-bind="$attrs">
+    <ActivityTitle>检查更新</ActivityTitle>
+    <ActivityBody>
+        <div v-if="period == 0">
+            是否立即检查更新？<a href="#" @click.prevent="check">检查更新</a>
+        </div>
+        <div v-if="period == -1">
+            更新检查失败。{{error}}<ElButton @click="back" style="margin-left: 0.5em;">返回</ElButton>
+        </div>
+        <div v-if="period == 1">
+            更新检查完成。{{result}}<ElButton @click="back" style="margin-left: 0.5em;">返回</ElButton>
+        </div>
+    </ActivityBody>
+</ActivityView>

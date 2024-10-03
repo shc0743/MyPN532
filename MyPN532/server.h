@@ -58,6 +58,8 @@ namespace server {
 			ADD_METHOD_TO(server::MainServer::lockufuid, "/api/v4.8/nfc/uid/lock", Post, Options, "server::AuthFilter");
 
 			ADD_METHOD_TO(server::MainServer::appversion, "/api/v5.0/app/version", Get, Options, "server::AuthFilter");
+			ADD_METHOD_TO(server::MainServer::appversion, "/api/v5.0/app/version/internal", Get, Options, "server::AuthFilter");
+			ADD_METHOD_TO(server::MainServer::appversioncommon, "/api/v5.0/app/version/common", Get, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::updateurl, "/api/v5.0/app/update/url", Get, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::updaterel, "/api/v5.0/app/update/release", Get, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::updateserviceprovider, "/api/v5.0/app/update/service_provider", Get, Options, "server::AuthFilter");
@@ -65,6 +67,9 @@ namespace server {
 			
 			ADD_METHOD_TO(server::MainServer::getgenshinurl, "/api/v5.0/api/genshin/url", Get, Options, "server::AuthFilter");
 			ADD_METHOD_TO(server::MainServer::getgenshinversion, "/api/v5.0/api/genshin/version", Get, Options, "server::AuthFilter");
+			
+			ADD_METHOD_TO(server::MainServer::getlogfilelist, "/api/v5.1/app/log/list", Get, Post, Options, "server::AuthFilter");
+			ADD_METHOD_TO(server::MainServer::getlogfile, "/api/v5.1/app/log/data", Post, Options, "server::AuthFilter");
 		METHOD_LIST_END
 
 
@@ -94,6 +99,7 @@ namespace server {
 		void lockufuid(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 
 		void appversion(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		void appversioncommon(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void updateurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void updaterel(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void updateserviceprovider(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
@@ -101,6 +107,9 @@ namespace server {
 		
 		void getgenshinurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 		void getgenshinversion(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		
+		void getlogfilelist(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
+		void getlogfile(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const;
 
 
 	public:

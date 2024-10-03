@@ -17,6 +17,13 @@ const data = {
         
     },
 
+    props: {
+        closable: {
+            type: Boolean,
+            default: true,
+        }
+    },
+
     methods: {
         back() {
             if (history.length > 1 && navigation.canGoBack) history.back();

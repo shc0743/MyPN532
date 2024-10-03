@@ -223,29 +223,39 @@ async function InitUserInterfaceByAskingServerState() {
     }).catch(e => console.warn('[adservice]', 'failed to load ad info: ', e));
 
     
+    globalThis.appInstance_.checkUpdate = async function (force = false) {
+        const app_version = +(await (await fetch("/api/v5.0/app/version")).text());
+        const remote_url = await(await fetch('/api/v5.0/app/update/url')).text();
+        const remote_version = +(await(await fetch(remote_url, { cache: force ? undefined : 'no-store' })).text());
+        const hasUpdates = function (ver) {
+            globalThis.appInstance_.updater.updateTarget = +ver;
+            globalThis.appInstance_.updater.updateapi(3);
+            return true;
+        };
+        if (remote_version > app_version) do {
+            const ignore = await userconfig.get('updatechecker.ignore');
+            if (!force) if (+ignore === remote_version) break;
+            await userconfig.put('updatechecker.pending', remote_version)
+            return hasUpdates(remote_version);
+        } while (0);
+        const currentTime = (new Date().getTime());
+        userconfig.put('updatechecker.last_check_time', currentTime);
+    };
     queueMicrotask(async () => {
         if ('true' === await userconfig.get('updatechecker.disabled')) return;
-        const app_version = +(await (await fetch("/api/v5.0/app/version")).text());
         const checkLast = +await userconfig.get('updatechecker.last_check_time');
         const currentTime = (new Date().getTime());
         const checkToday = isNaN(checkLast) ? true : ((currentTime - checkLast) < (1000 * 86400));
         const hasUpdates = function (ver) {
             globalThis.appInstance_.updater.updateTarget = +ver;
             globalThis.appInstance_.updater.updateapi(3);
+            return true;
         };
         const pending = await userconfig.get('updatechecker.pending')
         if (pending != null && pending) return hasUpdates(pending);
         if (checkToday) return;
 
-        const remote_url = await (await fetch('/api/v5.0/app/update/url')).text();
-        const remote_version = +(await (await fetch(remote_url)).text());
-        if (remote_version > app_version) do {
-            const ignore = await userconfig.get('updatechecker.ignore');
-            if (+ignore === remote_version) break;
-            await userconfig.put('updatechecker.pending', remote_version)
-            return hasUpdates(remote_version);
-        } while (0);
-        userconfig.put('updatechecker.last_check_time', currentTime);
+        await appInstance_.checkUpdate();
     });
 
     

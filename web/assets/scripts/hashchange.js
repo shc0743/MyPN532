@@ -50,6 +50,14 @@ export default {
         this.$data.current_page = 'taginfo';
     },
 
+    "#/logs/"(hash) {
+        this.$data.current_page = 'logs';
+    },
+
+    "#/update/check"(hash) {
+        this.$data.current_page = 'update/check';
+    },
+
     "#/launchcmd/"(hash) {
         fetch('/api/v4.8/native/launchcmd', { method: 'POST' }).catch(e => {})
         history.replaceState({}, document.title, '#/');

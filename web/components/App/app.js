@@ -24,6 +24,8 @@ const DumpEditor = defineAsyncComponent(async () => (await import('../DumpEditor
 const AboutPage = defineAsyncComponent(async () => (await import('../AboutPage/AboutPage.js')).default);
 const AdService = defineAsyncComponent(async () => (await import('../AdService/AdService.js')).default);
 const UpdateService = defineAsyncComponent(async () => (await import('../UpdateService/UpdateService.js')).default);
+const LogView = defineAsyncComponent(async () => (await import('../Lo$FUCKEASYPRIVATE$gV$FUCKEASYPRIVATE$iew/Lo$FUCKEASYPRIVATE$gV$FUCKEASYPRIVATE$iew.js')).default);
+const PositiveUpdateCheck = defineAsyncComponent(async () => (await import('../PositiveUpdateCheck/PositiveUpdateCheck.js')).default);
 
 
 
@@ -57,6 +59,8 @@ const data = {
         NdefCenter,
         AdService,
         UpdateService,
+        LogView,
+        PositiveUpdateCheck,
     },
 
     computed: {

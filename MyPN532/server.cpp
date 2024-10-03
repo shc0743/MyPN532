@@ -1,6 +1,9 @@
 #include "server.h"
 #include <string>
 #include "../../resource/tool.h"
+
+#include "resource.h"
+
 using namespace server;
 using namespace drogon;
 
@@ -243,7 +246,12 @@ void server::MainServer::webconfig(const HttpRequestPtr& req, std::function<void
 
 
 
-static bool ListFilesInDirectory(const std::wstring& directoryPath, std::wstring& names) {
+enum class LFID_Options {
+	All = 2,
+	File = 0,
+	Directory = 1
+};
+static bool ListFilesInDirectory(const std::wstring& directoryPath, std::wstring& names, LFID_Options opt = LFID_Options::File) {
 	WIN32_FIND_DATA findFileData;
 	HANDLE hFind = FindFirstFile((directoryPath + L"\\*").c_str(), &findFileData);
 
@@ -253,7 +261,10 @@ static bool ListFilesInDirectory(const std::wstring& directoryPath, std::wstring
 
 	do {
 		// 检查是否是文件（不是目录）  
-		if (!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) &&
+		if (
+			(opt == LFID_Options::All) ||
+			((((LFID_Options)(int)!!(findFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) == opt)
+		) &&
 			!(findFileData.cFileName[0] == L'.' && (findFileData.cFileName[1] == L'\0' ||
 			(findFileData.cFileName[1] == L'.' && findFileData.cFileName[2] == L'\0')))) {
 			names.append(findFileData.cFileName);
@@ -786,6 +797,24 @@ void server::MainServer::appversion(const HttpRequestPtr& req, std::function<voi
 	callback(resp);
 }
 
+void server::MainServer::appversioncommon(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	HINSTANCE hInst = GetModuleHandleW(NULL);
+	HRSRC hResID = ::FindResourceW(hInst, MAKEINTRESOURCEW(IDR_BIN_VERSION), L"BIN");
+	HGLOBAL hRes = ::LoadResource(hInst, hResID);
+	DWORD dwResSize = ::SizeofResource(hInst, hResID);
+	if (dwResSize > 1024) throw std::exception();
+	LPVOID pRes = ::LockResource(hRes);
+	if (!pRes) throw std::exception();
+	string app_version((PCSTR)pRes, dwResSize);
+
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	resp->setBody(app_version);
+	callback(resp);
+}
+
 void server::MainServer::updateurl(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
 {
 	string file = "webroot/assets/static/update_url";
@@ -895,6 +924,63 @@ void server::MainServer::getgenshinversion(const HttpRequestPtr& req, std::funct
 	resp->setContentTypeCode(CT_TEXT_PLAIN);
 	resp->setBody(version);
 	callback(resp);
+}
+
+
+void server::MainServer::getlogfilelist(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	HttpResponsePtr resp = HttpResponse::newHttpResponse();
+	CORSadd(req, resp);
+	string data; wstring wdata;
+	if (req->bodyLength()) {
+		if (req->bodyLength() > 32768) throw std::exception();
+		string strRaw = req->body().data();
+		wstring ws = ConvertUTF8ToUTF16(strRaw);
+		if (ws.find(L"\\") != ws.npos || ws.find(L"/") != ws.npos) {
+			resp->setStatusCode(k403Forbidden);
+		}
+		else {
+			resp->setStatusCode(ListFilesInDirectory(L"./logs/" + ws, wdata, LFID_Options::File) ? k200OK : k500InternalServerError);
+		}
+	}
+	else {
+		resp->setStatusCode(ListFilesInDirectory(L"./logs/", wdata, LFID_Options::Directory) ? k200OK : k500InternalServerError);
+	}
+	data = ConvertUTF16ToUTF8(wdata);
+
+	resp->setContentTypeCode(CT_TEXT_PLAIN);
+	resp->setBody(data);
+	callback(resp);
+}
+
+void server::MainServer::getlogfile(const HttpRequestPtr& req, std::function<void(const HttpResponsePtr&)>&& callback) const
+{
+	Json::Value json;
+	wstring catalog, file;
+	wstring path;
+	try {
+		Json::Reader reader;
+		bool parsingSuccessful = reader.parse(req->bodyData(), json);
+		if (!parsingSuccessful) throw 1;
+		if (!(json["catalog"].isString() && json["file"].isString())) throw 2;
+		catalog = ConvertUTF8ToUTF16(json["catalog"].asString());
+		file = ConvertUTF8ToUTF16(json["file"].asString());
+		if (!(catalog.length() && file.length())) throw 3;
+		path = L"./logs/" + catalog + L"/" + file;
+		wstring cl = catalog + file;
+		if (cl.find(L"\\") != cl.npos || cl.find(L"/") != cl.npos) throw 4;
+	}
+	catch (...) {
+		HttpResponsePtr resp = HttpResponse::newHttpResponse();
+		CORSadd(req, resp);
+		resp->setStatusCode(k400BadRequest);
+		return callback(resp);
+	}
+
+	HttpResponsePtr resp2 = HttpResponse::newFileResponse(ConvertUTF16ToUTF8(path));
+	resp2->setContentTypeCode(CT_APPLICATION_OCTET_STREAM);
+	CORSadd(req, resp2);
+	callback(resp2);
 }
 
 

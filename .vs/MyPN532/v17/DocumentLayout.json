@@ -3,24 +3,28 @@
   "WorkspaceRootPath": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server-ws.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|solutionrelative:MyPN532\\server-ws.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+      "AbsoluteMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|solutionrelative:MyPN532\\server.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\updater.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|solutionrelative:MyPN532\\updater.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
+      "AbsoluteMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server-ws.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|solutionrelative:MyPN532\\server-ws.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
       "AbsoluteMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{BD55E21F-4F64-418A-BC43-3B2762B00779}|MyPN532\\MyPN532.vcxproj|solutionrelative:MyPN532\\server.h||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\better-mfoc.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
-      "RelativeMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|solutionrelative:PN532_libnfc_Host\\better-mfoc.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\mfclassic.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
       "RelativeMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|solutionrelative:PN532_libnfc_Host\\mfclassic.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\better-mfoc.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
+      "RelativeMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|solutionrelative:PN532_libnfc_Host\\better-mfoc.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{C0AE2D88-5D00-4B90-BCE0-80EB6F9C1993}|PN532_libnfc_Host\\PN532_libnfc_Host.vcxproj|D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\PN532_libnfc_Host.cpp||{D0E1A5C6-B359-4E41-9B60-3365922C2A22}",
@@ -34,8 +38,21 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 7,
+          "SelectedChildIndex": 0,
           "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "server.cpp",
+              "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server.cpp",
+              "RelativeDocumentMoniker": "MyPN532\\server.cpp",
+              "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server.cpp",
+              "RelativeToolTip": "MyPN532\\server.cpp",
+              "ViewState": "AQIAAJsDAAAAAAAAAAAiwKEDAAArAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-10-03T15:58:34.537Z",
+              "EditorCaption": ""
+            },
             {
               "$type": "Bookmark",
               "Name": "ST:0:0:{d3750d8a-574b-4fb3-b7e2-aa8af40e8231}"
@@ -60,9 +77,22 @@
               "RelativeDocumentMoniker": "MyPN532\\updater.cpp",
               "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\updater.cpp",
               "RelativeToolTip": "MyPN532\\updater.cpp",
-              "ViewState": "AQIAAGMAAAAAAAAAAAAQwGgAAAAAAAAA",
+              "ViewState": "AQIAAFoAAAAAAAAAAAAQwGgAAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
               "WhenOpened": "2024-09-16T16:55:10.815Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "server-ws.cpp",
+              "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server-ws.cpp",
+              "RelativeDocumentMoniker": "MyPN532\\server-ws.cpp",
+              "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server-ws.cpp",
+              "RelativeToolTip": "MyPN532\\server-ws.cpp",
+              "ViewState": "AQIAAM8GAAAAAAAAAAAAANMGAAAOAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
+              "WhenOpened": "2024-07-20T17:33:46.543Z",
               "EditorCaption": ""
             },
             {
@@ -71,7 +101,7 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 5,
               "Title": "better-mfoc.cpp",
               "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\better-mfoc.cpp",
               "RelativeDocumentMoniker": "PN532_libnfc_Host\\better-mfoc.cpp",
@@ -83,28 +113,16 @@
             },
             {
               "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "server-ws.cpp",
-              "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server-ws.cpp",
-              "RelativeDocumentMoniker": "MyPN532\\server-ws.cpp",
-              "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server-ws.cpp",
-              "RelativeToolTip": "MyPN532\\server-ws.cpp",
-              "ViewState": "AQIAALcGAAAAAAAAAAAiwM8GAAACAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-07-20T17:33:46.543Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "server.h",
               "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server.h",
               "RelativeDocumentMoniker": "MyPN532\\server.h",
               "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\MyPN532\\server.h",
               "RelativeToolTip": "MyPN532\\server.h",
-              "ViewState": "AQIAABsAAAAAAAAAAAAAACoAAAAuAAAA",
+              "ViewState": "AQIAADMAAAAAAAAAAAAAAEIAAAADAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000680|",
-              "WhenOpened": "2024-09-16T14:04:02.054Z"
+              "WhenOpened": "2024-09-16T14:04:02.054Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -114,13 +132,14 @@
               "RelativeDocumentMoniker": "PN532_libnfc_Host\\mfclassic.cpp",
               "ToolTip": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\mfclassic.cpp",
               "RelativeToolTip": "PN532_libnfc_Host\\mfclassic.cpp",
-              "ViewState": "AQIAAMEBAAAAAAAAAAAAAMEBAAAAAAAA",
+              "ViewState": "AQIAAKUBAAAAAAAAAAAywMEBAAAAAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000677|",
-              "WhenOpened": "2024-08-04T19:14:34.948Z"
+              "WhenOpened": "2024-08-04T19:14:34.948Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 6,
               "Title": "PN532_libnfc_Host.cpp",
               "DocumentMoniker": "D:\\software\\Program\\source\\VSProjects\\MyPN532\\PN532_libnfc_Host\\PN532_libnfc_Host.cpp",
               "RelativeDocumentMoniker": "PN532_libnfc_Host\\PN532_libnfc_Host.cpp",

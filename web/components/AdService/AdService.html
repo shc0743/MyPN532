@@ -20,8 +20,28 @@
     }div>>>:active {
         background-color: #d0d0d0;
     }</style>
-    <div style="display: flex; justify-content: space-between;"><b>《原神》{{ver}}版本上线！</b><a href="#" @click.prevent.stop="close">x</a></div>
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <b>《原神》{{ver}}版本上线！</b>
+        <span style="display: flex; align-items: center;">
+            <a href="#" @click.prevent.stop="close">x</a>
+        </span>
+    </div>
     <div style="flex: 1;"><a href="javascript:" @click.prevent>点击查看&gt;&gt;&gt;</a></div>
-    <div style="margin-top: 0.5em;"><span style="color: gray; font-size: small;">广告</span></div>
+    <div style="margin-top: 0.5em;">
+        <span style="color: gray; font-size: small;">广告</span>
+        <span style="color: gray; font-size: small; margin: 0 0.5em;">-</span>
+        <a href="#" @click.prevent.stop="manage" style="font-size: small; color: #666; margin-right: 1em;">管理</a>
+    </div>
 </div>
 </Teleport>
+<dialog v-deep ref="options">
+    <fieldset style="margin-top: 0.5em;">
+        <legend>广告隐私权设置</legend>
+        <label style="cursor: pointer;"><input type="checkbox" v-model="enableAdService" @input="updateAdService">允许向我显示广告</label>
+    </fieldset>
+    <div style="margin-top: 1em;">
+        <b style="color: red;">注意：</b>
+        <span>要使改动生效，您需要重新加载页面。</span>
+    </div>
+    <div style="margin-top: 1em; display: flex;"><ElButton @click="$refs.options.close()" type="primary" plain style="flex: 1">完成</ElButton></div>
+</dialog>

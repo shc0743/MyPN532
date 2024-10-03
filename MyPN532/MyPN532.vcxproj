@@ -184,6 +184,9 @@
   <ItemGroup>
     <ResourceCompile Include="MyPN532.rc" />
   </ItemGroup>
+  <ItemGroup>
+    <Text Include="..\version_common.txt" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="..\packages\vcpkg.D.software.Program.vcpkg.1.0.0\build\native\vcpkg.D.software.Program.vcpkg.targets" Condition="Exists('..\packages\vcpkg.D.software.Program.vcpkg.1.0.0\build\native\vcpkg.D.software.Program.vcpkg.targets')" />

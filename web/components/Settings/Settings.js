@@ -17,6 +17,7 @@ const data = {
             showDeviceTour: false,
             internal_version: '正在加载...',
             allowUpdates: false,
+            app_version: '',
         }
     },
 
@@ -63,6 +64,7 @@ const data = {
             this.nfcDevices.length = 0;
             try {
                 this.internal_version = await (await fetch("/api/v5.0/app/version")).text();
+                this.app_version = await (await fetch("/api/v5.0/app/version/common")).text();
                 this.allowUpdates = 'true' !== await userconfig.get('updatechecker.disabled');
                 const defaultdeviceresp = await fetch('/api/v4.8/nfc/defaultdevice');
                 if (defaultdeviceresp.headers.get('x-device-not-recognized') === 'true') {

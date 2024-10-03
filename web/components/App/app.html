@@ -175,6 +175,8 @@ main[v-deep] .error-view {
         <DumpsView v-if="current_page === 'dumps'" v-deep />
         <DumpEditor v-if="current_page === 'dump'" v-deep />
         <NdefCenter v-if="current_page === 'ndef'" v-deep />
+        <LogView v-if="current_page === 'logs'" v-deep />
+        <PositiveUpdateCheck v-if="current_page === 'update/check'" v-deep />
 
         <Settings v-if="current_page === 'settings'" v-deep />
         <AboutPage v-if="current_page === 'about'" v-deep />

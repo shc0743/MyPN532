@@ -265,28 +265,35 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		if (!file_exists(L"pn532_data/cache")) CreateDirectoryW(L"pn532_data/cache", 0);
 		if (!file_exists(L"pn532_data/logs")) CreateDirectoryW(L"pn532_data/logs", 0);
 #else
-		vector<wstring> dirsWillUse{
+		const auto runCreateProgramDir = [] (const vector<wstring> & dirsWillUse) {
+			for (auto& i : dirsWillUse) {
+				auto fileType = IsFileOrDirectory(L"./" + i);
+				if (fileType == 1) {
+					DeleteFileW(i.c_str());
+				}
+				fileType = IsFileOrDirectory(L"./" + i);
+				if (fileType != -1) {
+					CreateDirectoryW(i.c_str(), NULL);
+				}
+			}
+		};
+		runCreateProgramDir(vector<wstring>({
 			L"keys", L"dumps", L"autodump",
 			L"temp", L"cache", L"logs",
 			L"config",
 			L"redist",
-		};
-		for (auto& i : dirsWillUse) {
-			auto fileType = IsFileOrDirectory(L"./" + i);
-			if (fileType == 1) {
-				DeleteFileW(i.c_str());
-			}
-			fileType = IsFileOrDirectory(L"./" + i);
-			if (fileType != -1) {
-				CreateDirectoryW(i.c_str(), NULL);
-			}
-		}
+		}));
+		SetCurrentDirectoryW(L"logs");
+		runCreateProgramDir(vector<wstring>({
+			L"Server", L"Batch", L"Update"
+		}));
+		SetCurrentDirectoryW(L"..");
 #endif
 
 
 		std::shared_ptr<server::MainServer> srv(new server::MainServer);
 		auto& app = drogon::app();
-		app.setLogPath("./logs")
+		app.setLogPath("./logs/Server")
 			.setLogLevel(trantor::Logger::kWarn)
 			.setUploadPath(s_upload)
 			.setDocumentRoot(s_webroot)
@@ -295,7 +302,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 #define signlethread
 #undef signlethread
 #ifdef signlethread
-#pragma warning signle thrad server is obnly fo tesring! do not use in profuction
+#pragma warning signle thrad server is only fo tesring! do not use in profuction
 			.setThreadNum(1)
 #else
 			.setThreadNum(0)
