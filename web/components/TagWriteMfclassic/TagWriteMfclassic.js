@@ -34,6 +34,9 @@ const data = {
             error分析: '',
             writeSectorWritten: 0,
             writeSectorToWrite: 0,
+            multi_op_type: '',
+            multi_f_isUid: false,
+            multi_f_keyfiles_count: 0,
         }
     },
 
@@ -298,6 +301,10 @@ const data = {
                 ElMessage.error('读取失败，请先将标签放在读卡器上再按此按钮');
             }
         },
+
+        multi_run() {
+            
+        },
     },
 
     mounted() {
@@ -323,6 +330,19 @@ const data = {
                 if (sector) this.writeBlock.sector = sector;
                 if (block) this.writeBlock.block = block;
                 if (value) this.writeBlock.value = value;
+            }
+            else if (type === 'lock') {
+                this.writePage = 'lock_ufuid';
+            }
+            else if (type === 'setid') {
+                this.writePage = 'setuid';
+                const writeUid = url.searchParams.get('uid');
+                if (writeUid) {
+                    this.writeUid = writeUid;
+                }
+            }
+            else if (type === 'multiple') {
+                this.writePage = 'multiple';
             }
         });
     },

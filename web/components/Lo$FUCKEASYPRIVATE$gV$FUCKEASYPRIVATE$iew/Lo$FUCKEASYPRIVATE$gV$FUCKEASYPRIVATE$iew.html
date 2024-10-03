@@ -1,5 +1,5 @@
 <ActivityView v-deep v-bind="$attrs">
-    <ActivityTitle v-show="!headless" :closable="!closeless"><ElBadge value="beta" :offset="[10, 10]"><span>日志查看器</span></ElBadge></ActivityTitle>
+    <ActivityTitle is-app-title v-show="!headless" :closable="!closeless"><ElBadge value="beta" :offset="[10, 10]"><span>日志查看器</span></ElBadge></ActivityTitle>
     <ActivityBody style="display: flex; flex-direction: column; overflow: hidden;">
         <div style="display: flex; white-space: nowrap; margin-bottom: 0.5em; align-items: center;">
             <span style="margin-right: 0.5em;">类别:</span>

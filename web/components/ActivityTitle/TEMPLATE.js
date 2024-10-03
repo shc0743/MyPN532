@@ -21,7 +21,11 @@ const data = {
         closable: {
             type: Boolean,
             default: true,
-        }
+        },
+        isAppTitle: {
+            type: Boolean,
+            default: false,
+        },
     },
 
     methods: {
@@ -32,6 +36,12 @@ const data = {
                 window.dispatchEvent(new HashChangeEvent('hashchange'));
             }
         },
+    },
+
+    mounted() {
+        this.$nextTick(() => {
+            if (this.isAppTitle) document.title = this.$el.innerText + ' - PN532';
+        });
     },
 
     template: await getHTML(import.meta.url, componentId),

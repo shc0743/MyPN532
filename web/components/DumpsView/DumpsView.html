@@ -1,5 +1,5 @@
 <ActivityView v-deep v-bind="$attrs">
-    <ActivityTitle>选择转储文件</ActivityTitle>
+    <ActivityTitle is-app-title>选择转储文件</ActivityTitle>
     <ActivityBody style="display: flex; flex-direction: column;" @dragover.prevent @drop.prevent="processFileDrop">
         <div class="fileSelector" v-deep>
             <ElCard>

@@ -1,5 +1,5 @@
 <ActivityView v-deep>
-    <ActivityTitle v-deep :inert="(page > 0 && page < 100)">读标签</ActivityTitle>
+    <ActivityTitle is-app-title v-deep :inert="(page > 0 && page < 100)">读标签</ActivityTitle>
     <style>[inert]>>>{opacity: 0.5;}</style>
     <ActivityBody style="display: flex; flex-direction: column;">
         <template v-if="page === 0">

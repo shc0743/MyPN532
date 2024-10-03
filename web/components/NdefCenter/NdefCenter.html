@@ -1,5 +1,5 @@
 <ActivityView v-deep>
-    <ActivityTitle v-deep :inert="anyPageRunning">NDEF</ActivityTitle>
+    <ActivityTitle is-app-title v-deep :inert="anyPageRunning">NDEF</ActivityTitle>
     <style>[inert]>>>{opacity: 0.5;}</style>
     <ActivityBody style="overflow: hidden; display: flex; flex-direction: column;">
         <div><ElSegmented v-model="currentTab" :options="tabsAvailable" size="large" :disabled="anyPageRunning" /></div>

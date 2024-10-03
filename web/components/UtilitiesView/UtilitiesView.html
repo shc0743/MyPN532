@@ -4,7 +4,7 @@
 </style>
 
 <ActivityView v-if="current_page === 'utilities'" v-deep>
-    <ActivityTitle>工具</ActivityTitle>
+    <ActivityTitle is-app-title>工具</ActivityTitle>
     <ActivityBody>
         <div style="margin-top: 1em;"><a href="#/utility/taginfo/">标签信息</a></div>
         <div style="margin-top: 1em;"><a href="#/utility/devicedetection/">设备检测</a></div>
@@ -20,14 +20,14 @@
 </ActivityView>
 
 <ActivityView v-if="current_page === 'nfcdevicedetection'" v-deep>
-    <ActivityTitle>NFC 设备检测</ActivityTitle>
+    <ActivityTitle is-app-title>NFC 设备检测</ActivityTitle>
     <ActivityBody v-loading="hasNfcDeviceDetection">
         <ElButton @click="startNfcDeviceDetection">点击按钮开始检测</ElButton>
     </ActivityBody>
 </ActivityView>
 
 <ActivityView v-if="current_page === 'taginfo'" v-deep>
-    <ActivityTitle>NFC 标签信息</ActivityTitle>
+    <ActivityTitle is-app-title>NFC 标签信息</ActivityTitle>
     <ActivityBody v-loading="nfcTagTypeInfo === '1'">
         <ElButton @click="startNfcTagTypeDetection">点击按钮开始检测</ElButton>
         <pre v-if="nfcTagTypeInfo" v-text="nfcTagTypeInfo" style="margin-top: 1em;"></pre>

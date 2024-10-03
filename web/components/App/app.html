@@ -112,6 +112,8 @@ main[v-deep] .error-view {
                 }
             </style>
 
+            <ActivityTitle  is-app-title v-show="false">主页</ActivityTitle>
+
             <div class="welcome-view-container" v-deep :inert="showGuide">
                 <a v-if="advancedUser" href="#/tag/read" class="my-card" tabindex="0" role="link" v-deep>
                     <img width="100" src="/assets/MCT-drawable/read_tag.png">
@@ -158,7 +160,7 @@ main[v-deep] .error-view {
         </div>
 
         <ActivityView v-if="current_page === 'tag/read' || current_page === 'tag/write'" v-deep>
-            <ActivityTitle>选择标签类型</ActivityTitle>
+            <ActivityTitle is-app-title>选择标签类型</ActivityTitle>
             <ActivityBody>
                 <div>当前支持的标签类型：</div>
                 <div style="display: flex; margin-top: 1em;"><ElButton @click="userChooseTagType('mfclassic')" type="primary" size="large" plain style="flex: 1;">Mifare Classic</ElButton></div>

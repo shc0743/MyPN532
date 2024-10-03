@@ -1,5 +1,5 @@
 <ActivityView v-deep v-bind="$attrs">
-    <ActivityTitle>编辑密钥文件</ActivityTitle>
+    <ActivityTitle is-app-title>编辑密钥文件</ActivityTitle>
     <ActivityBody style="display: flex; flex-direction: column;" @dragover.prevent @drop.prevent="processFileDrop">
         <div class="fileSelector" v-deep v-if="!targetFile">
             <ElCard>
