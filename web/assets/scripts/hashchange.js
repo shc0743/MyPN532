@@ -76,5 +76,13 @@ export default {
         history.replaceState({}, document.title, '#/');
         window.dispatchEvent(new HashChangeEvent('hashchange'));
     },
+
+    "#/api/config/apply"(hash) {
+        const url = new URL(hash.substring(1), location.href);
+        const k = url.searchParams.get('key'), v = url.searchParams.get('value');
+        userconfig.put(k, v);
+        history.replaceState({}, document.title, '#/');
+        window.dispatchEvent(new HashChangeEvent('hashchange'));
+    },
     
 };

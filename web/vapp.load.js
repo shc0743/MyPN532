@@ -58,12 +58,16 @@ function StartWebConversation() {
             }, 1000);
         }
         (async () => {
+            if ((await userconfig.get('devicedetection.ignore')) == 'true') return;
+            const { h } = await import('vue');
             const resp = await fetch('/api/v4.8/nfc/defaultdevice');
             if (!await (resp).text()) try {
                 if (location.hash.startsWith('#/settings/')) throw 1;
                 await (ElMessageBox.confirm(resp.headers.get('x-device-not-recognized') === 'true' ?
-                    '默认设备无法连接（一般是因为更换了USB插口等原因，也有可能是其他程序占用），是否前往更新？（注：如果正在运行其他操作，则设备占用是正常现象，可以放心忽略此提示；如果没有插入NFC设备，请先插入设备，然后刷新页面，如此提示依然出现则应前往设置）' : '未设置默认设备，是否前往设置？',
-                    '温馨提示', {
+                    h('div', {}, [
+                        h('div', { style: { marginBottom: '0.5em' } }, '默认设备无法连接（一般是因为更换了USB插口等原因，也有可能是其他程序占用），是否前往更新？（注：如果正在运行其他操作，则设备占用是正常现象，可以放心忽略此提示；如果没有插入NFC设备，请先插入设备，然后刷新页面，如此提示依然出现则应前往设置）'),
+                        h('a', { href: '#/api/config/apply?key=devicedetection.ignore&value=true&callback=#/' }, '不再提示'),
+                    ]) : '未设置默认设备，是否前往设置？', '温馨提示', {
                     type: 'warning',
                     confirmButtonText: resp.headers.get('x-device-not-recognized') === 'true' ? '前往' : '立即前往 (建议)',
                     cancelButtonText: resp.headers.get('x-device-not-recognized') === 'true' ? '忽略' : '不前往 (不建议)',

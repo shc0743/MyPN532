@@ -90,19 +90,19 @@
                 <div v-deep class="input-area"><a target="_blank" href="#/logs/?closeless=1&catalog=Batch"><svg class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" style="width: 1em; height: 1em; margin-right: 0.5em"><path d="M938.666667 128a42.666667 42.666667 0 0 0-42.666667-42.666667h-298.666667a42.666667 42.666667 0 0 0 0 85.333334h195.669334l-268.501334 268.501333a42.666667 42.666667 0 0 0 60.330667 60.330667L853.333333 230.997333V426.666667a42.666667 42.666667 0 1 0 85.333334 0V128z" fill="#2B2F36"></path><path d="M170.666667 213.333333h256v85.333334H170.666667v554.666666h682.666666v-234.666666h85.333334V853.333333a85.333333 85.333333 0 0 1-85.333334 85.333334H170.666667a85.333333 85.333333 0 0 1-85.333334-85.333334V298.666667a85.333333 85.333333 0 0 1 85.333334-85.333334z" fill="#2B2F36"></path></svg>操作日志</a></div>
 
                 <ElFormItem label="操作类型">
-                    <ElRadio v-model="multi_op_type" value="write">将转储文件写入到标签 (即将推出)</ElRadio>
-                    <ElRadio v-model="multi_op_type" value="format">格式化</ElRadio>
-                    <ElRadio v-model="multi_op_type" value="setid">设置 ID (即将推出)</ElRadio>
+                    <ElRadio v-model="multi.op_type" value="write">将转储文件写入到标签 (即将推出)</ElRadio>
+                    <ElRadio v-model="multi.op_type" value="format">格式化</ElRadio>
+                    <ElRadio v-model="multi.op_type" value="setid">设置 ID (即将推出)</ElRadio>
                 </ElFormItem>
 
-                <div v-if="multi_op_type === 'write'">
+                <div v-if="multi.op_type === 'write'">
                     <div><small>写转储</small></div>
                     upcoming
                 </div>
-                <div v-if="multi_op_type === 'format'">
+                <div v-if="multi.op_type === 'format'">
                     <div><small>格式化</small></div>
-                    <div style="margin-top: 0.5em;">是否为UID/UFUID: <ElCheckbox v-model="multi_f_isUid"></ElCheckbox></div>
-                    <div style="margin-top: 0.5em;" v-if="!multi_f_isUid">密钥文件: <span>{{multi_f_keyfiles_count}}</span> 个已选 &nbsp; <a href="#" @click.prevent="multi_f_sk">选择...</a></div>
+                    <div style="margin-top: 0.5em;">是否为UID/UFUID: <ElCheckbox v-model="multi.f_isUid"></ElCheckbox></div>
+                    <div style="margin-top: 0.5em;" v-if="!multi.f_isUid">密钥文件: <span>{{userkeyfile.length}}</span> 个已选 &nbsp; <a href="#" @click.prevent="multi_f_sk">选择...</a></div>
                 </div>
 
                 <div style="margin-top: 0.5em; display: flex; flex-direction: column;">
@@ -154,7 +154,17 @@
             </div>
         </template>
         <template v-if="page === 1999">
-            
+            <div>批量运行中<a href="#" style="margin-left: 0.5em;" @click.prevent="multi_cancel">修改配置</a></div>
+            <template v-if="multi.op_type === 'format'">
+                <div>类型: <span>格式化</span> | 密钥文件: <span>{{userkeyfile.length}}个</span></div>
+                <div style="flex: 1;">
+
+                </div>
+            </template>
+            <div v-deep class="multi-status-bar" style="margin-top: 0.5em;">
+                <span v-deep class="multi-status-item">成功: <span v-text="multi.sc"></span></span>
+                <span v-deep class="multi-status-item">失败: <span v-text="multi.fc"></span></span>
+            </div>
         </template>
     </ActivityBody>
     <style>
@@ -183,6 +193,15 @@
         }
         dialog>>>::backdrop {
             transition: all 0.2s allow-discrete;
+        }
+        .multi-status-bar>>> {
+            display: flex;
+            align-items: center;
+        } 
+        .multi-status-item[v-deep]+.multi-status-item>>> {
+            margin-left: 1em;
+            border-left: 1px solid;
+            padding-left: 1em;
         }
     </style>
 </ActivityView>

@@ -34,9 +34,12 @@ const data = {
             error分析: '',
             writeSectorWritten: 0,
             writeSectorToWrite: 0,
-            multi_op_type: '',
-            multi_f_isUid: false,
-            multi_f_keyfiles_count: 0,
+            multi: {
+                op_type: '',
+                f_isUid: false,
+                f_keyfiles_count: 0,
+                sc: 0, fc: 0,
+            },
         }
     },
 
@@ -303,7 +306,27 @@ const data = {
         },
 
         multi_run() {
+            const type = this.multi.op_type;
+            switch (type) {
+                case 'format': queueMicrotask(async () => {
+                    this.page = 1999;
+                });
+                    break;
             
+                default:
+                    return ElMessage.error('请选择操作类型');
+            }
+        },
+        multi_cancel() {
+            this.page = 1;
+        },
+        multi_f_sk(param) {
+            if (param) {
+                this.Myfunc_ = 'multi_f_sk';
+                this.$refs.keySelector.show();
+                return;
+            }
+            this.multi.f_keyfiles_count = this.userkeyfile.length;
         },
     },
 
