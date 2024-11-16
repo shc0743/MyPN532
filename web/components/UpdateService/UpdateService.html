@@ -1,8 +1,8 @@
 <update-widget v-deep v-if="hasUpdates" class="el-notification right" :style="{paddingBottom:hasUpdates===2?'0px':undefined,top:'16px','--el-notification-width':'max-content','--el-notification-padding':'1em',display:'block'}">
     <div style="font-weight: bold; font-size: x-large; text-align: center;">检测到应用程序更新</div>
     <div style="margin-top: 0.5em;">
-        <div v-text="updateVersion || '正在加载版本信息...'"></div>
-        <div v-if="updateVersion"><a :href="updateDetailUrl" target="_blank" referrerpolicy="no-referrer">在 {{updateSourceName}} 上 查看发行说明</a></div>
+        <div style="white-space: pre;" v-text="updateVersion || '正在加载版本信息...'"></div>
+        <div v-if="updateVersion"><a :href="updateDetailUrl" target="_blank" referrerpolicy="no-referrer">在 {{updateSourceName}} 上 查看更多发行说明</a></div>
         <div style="color: gray; margin-top: 0.5em;">内部版本号: {{updateTarget}}</div>
     </div>
     <div style="margin-top: 0.5em; display: flex;">

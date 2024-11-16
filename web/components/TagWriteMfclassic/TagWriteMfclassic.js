@@ -328,6 +328,10 @@ const data = {
             }
             this.multi.f_keyfiles_count = this.userkeyfile.length;
         },
+
+        openLogViewer(catalog) {
+            window.open('#/logs/?closeless=1&catalog=' + catalog, '_blank', 'width=800,height=600');
+        },
     },
 
     mounted() {

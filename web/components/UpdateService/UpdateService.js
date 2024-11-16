@@ -40,6 +40,16 @@ const data = {
                     const newVersion = (await remote_response.text());
                     this.updateVersion = '新版本: ' + newVersion;
 
+                    try {
+                        const remote_url = await (await fetch('/api/v5.0/app/update/url?type=note')).text();
+                        const remote_response = (await fetch(remote_url));
+                        if (!remote_response.ok) throw -1;
+                        const newVersion = (await remote_response.text());
+                        this.updateVersion += '\n简要说明: ' + newVersion;
+                    } catch {
+                        this.updateVersion += '\n无法加载更多信息';
+                    }
+
                 } catch {
                     this.updateVersion = '版本信息加载失败';
                 }

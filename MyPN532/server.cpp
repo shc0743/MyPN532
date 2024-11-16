@@ -801,6 +801,7 @@ void server::MainServer::appversioncommon(const HttpRequestPtr& req, std::functi
 {
 	HINSTANCE hInst = GetModuleHandleW(NULL);
 	HRSRC hResID = ::FindResourceW(hInst, MAKEINTRESOURCEW(IDR_BIN_VERSION), L"BIN");
+	if (!hResID) throw std::exception("Resource is broken, please re-download the application");
 	HGLOBAL hRes = ::LoadResource(hInst, hResID);
 	DWORD dwResSize = ::SizeofResource(hInst, hResID);
 	if (dwResSize > 1024) throw std::exception();
@@ -819,6 +820,7 @@ void server::MainServer::updateurl(const HttpRequestPtr& req, std::function<void
 {
 	string file = "webroot/assets/static/update_url";
 	if (req->getParameter("type") == "pkg") file += "_pkg";
+	if (req->getParameter("type") == "note") file += "_note";
 	HttpResponsePtr resp = HttpResponse::newFileResponse(file);
 	CORSadd(req, resp);
 	resp->setContentTypeCode(CT_TEXT_PLAIN);
