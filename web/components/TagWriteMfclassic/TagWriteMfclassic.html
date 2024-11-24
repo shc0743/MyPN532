@@ -157,8 +157,35 @@
             <div>批量运行中<a href="#" style="margin-left: 0.5em;" @click.prevent="multi_cancel">修改配置</a></div>
             <template v-if="multi.op_type === 'format'">
                 <div>类型: <span>格式化</span> | <span v-if="multi.f_isUid">写入UID/UFUID不需要密钥文件</span><span v-else>密钥文件: <span>{{userkeyfile.length}} 个</span></span></div>
-                <div style="flex: 1;">
-                    TODO
+                <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid gray; padding: 10px;">
+                    <div class="stat-unconnect" v-if="multi.stat === 0"><div style="font-size: x-large;">请将标签放在读卡器上</div></div>
+                    <div class="stat-running" v-if="multi.stat === 1 && page !== 9999">
+                        <div style="flex: 1; display: flex; flex-direction: column; overflow: hidden;" v-show="show_advanced">
+                            <ElProgress :text-inside="true" :stroke-width="25" :percentage="write_percent" status="success" v-if="show_advanced" />
+                            <div style="border: 1px solid; border-radius: 10px; padding: 10px; overflow: auto; white-space: pre; flex: 1; margin-top: 0.5em;" ref="logDiv">
+                                <div style="position: sticky; top: 0; left: 0; background-color: #fff; margin-bottom: 0.5em; padding-bottom: 0.5em; border-bottom: 1px solid gray;">操作日志</div>
+                            </div>
+                        </div>
+                        <div v-if="(page >= 10001 && page < 11000) && (!show_advanced)" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                            <div style="color: red; font-size: x-large; text-align: center; margin-bottom: 1em; padding-bottom: 0.5em; border-bottom: 1px solid;">出现错误！(错误代码：{{page}}) <ElButton text @click="retryAction">重试</ElButton><ElButton text size="small" @click="show_advanced = true">显示日志</ElButton></div>
+                            <div v-text="error分析" style="white-space: pre; font-weight: bold;"></div>
+                            <div style="margin-top: 1em; padding-top: 0.5em; border-top: 1px solid;">问题详细信息:</div>
+                            <div v-text="errorText" style="flex: 1; overflow: auto; white-space: pre;"></div>
+                        </div>
+                        <div style="flex: 1; display: grid; place-items: center;" v-if="!show_advanced && (!(page >= 10001 && page < 11000))">
+                            <div style="text-align: center;">
+                                <div style="margin-bottom: 1em;" v-if="page === 3">正在写入标签...</div>
+                                <div style="margin-bottom: 0.5em; font-size: x-large; color: green;" v-if="page === 9999">标签写入成功!</div>
+                                <div style="margin-bottom: 1em; user-select: none;" v-if="page === 9999">写入块: <span style="user-select: all;">{{writeSectorWritten}} / {{writeSectorToWrite}}</span></div>
+                                <ElProgress type="circle" :percentage="write_percent" :status="write_percent >= 100 ? 'success' : undefined" />
+                                <div style="margin-top: 1em;"><ElButton type="success" plain @click="doneWrite" v-if="page === 9999">完成</ElButton></div>
+                                <div style="margin-top: 1em;"><ElButton text size="small" @click="show_advanced = true">显示更多...</ElButton></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="stat-running" v-if="multi.stat === 1 && page === 9999">
+                        <div style="font-size: x-large;">完成</div>
+                    </div>
                 </div>
             </template>
             <div v-deep class="multi-status-bar" style="margin-top: 0.5em;">

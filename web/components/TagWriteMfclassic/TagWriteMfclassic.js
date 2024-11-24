@@ -39,6 +39,7 @@ const data = {
                 f_isUid: false,
                 f_keyfiles_count: 0,
                 sc: 0, fc: 0,
+                stat: 0,
             },
         }
     },
@@ -288,6 +289,9 @@ const data = {
             this.error分析 = '暂无可用的分析信息';
         },
         doneWrite() {
+            this.page = 1;
+            return;
+            
             if (history.length > 1 && navigation.canGoBack) history.back();
             else {
                 history.replaceState({}, document.title, '#/');
