@@ -36,10 +36,17 @@ const data = {
             writeSectorToWrite: 0,
             multi: {
                 op_type: '',
+                isRun: false,
                 f_isUid: false,
                 f_keyfiles_count: 0,
                 sc: 0, fc: 0,
                 stat: 0,
+                interval: 0,
+                last_id: null,
+                resultHasProceed: false,
+                startTime: null,
+                enable_log: false,
+                log_name: '',
             },
         }
     },
@@ -108,8 +115,8 @@ const data = {
                 noBccCheck: this.writeDump.nobcc,
             });
         },
-        async executeFormat(isUid) {
-            try { await ElMessageBox.confirm('确定执行格式化操作吗?', '格式化标签', {
+        async executeFormat(isUid, doesWarning = true) {
+            if (doesWarning) try { await ElMessageBox.confirm('确定执行格式化操作吗?', '格式化标签', {
                 type: 'warning',
                 confirmButtonText: '继续',
                 cancelButtonText: '不继续',
@@ -314,15 +321,31 @@ const data = {
             switch (type) {
                 case 'format': queueMicrotask(async () => {
                     this.page = 1999;
+                    this.multi.isRun = true;
+                    this.multi.stat = 0;
+                    
+                    this.multi.interval = setInterval(this.multi_interval, 1000);
                 });
                     break;
             
                 default:
                     return ElMessage.error('请选择操作类型');
             }
+            this.multi.startTime = ((new Date()).toLocaleString());
+            this.multi.log_name = ((new Date()).toISOString().replace(/(\:|-)/g, '')) + '.log';
         },
         multi_cancel() {
+            clearInterval(this.multi.interval); this.multi.interval = 0;
             this.page = 1;
+            // reset status
+            const def = {
+                isRun: false,
+                sc: 0, fc: 0,
+                stat: 0,
+                last_id: null,
+                resultHasProceed: false,
+            };
+            for (const i in def) this.multi[i] = def[i];
         },
         multi_f_sk(param) {
             if (param) {
@@ -331,6 +354,67 @@ const data = {
                 return;
             }
             this.multi.f_keyfiles_count = this.userkeyfile.length;
+        },
+        async multi_interval() {
+            if (this.multi.stat === 0) try {
+                const taginforesp = await fetch('/api/v4.8/nfc/taginfojson');
+                if (!taginforesp.ok) throw '标签读取失败，请检查标签及设备连接\n\nHTTP Error: ' + taginforesp.status + ' ' + taginforesp.statusText;
+                const taginfo = await taginforesp.json();
+                const m1_sak = ['08', '18'];
+                const card_type =
+                    m1_sak.includes(taginfo.sak) ? 'm1' :
+                        (taginfo.sak === '00' && taginfo.atqa === '0044') ? 'm0' : null;
+                if (!card_type) throw '无法确定标签类型（根据SAK值）。\n' + JSON.stringify(taginfo, null, 4);
+                if (card_type != 'm1') throw -1;
+
+                if (taginfo.uid === this.multi.last_id) return;
+                this.multi.stat = 1;
+                this.multi.last_id = taginfo.uid;
+                this.multi.resultHasProceed = false;
+
+                const type = this.multi.op_type;
+                switch (type) {
+                    case 'format': queueMicrotask(async () => {
+                        this.executeFormat(this.multi.f_isUid, false);
+                    });
+                        break;
+
+                    default:
+                        return ElMessage.error('请选择操作类型');
+                }
+
+                return;
+            } catch (error) {
+                this.multi.last_id = null;
+                return;
+            }
+            if (this.multi.stat === 1) {
+                const type = this.multi.op_type;
+                switch (type) {
+                    case 'format': queueMicrotask(async () => {
+                        if (this.multi.resultHasProceed) return;
+                        if (this.page === 9999) {
+                            this.multi.resultHasProceed = true; ++this.multi.sc;
+                            tickManager.nextTick(() => { tickManager.nextTick(() => { tickManager.nextTick(() => { tickManager.nextTick(() => { tickManager.nextTick(() => {
+                                this.multi.stat = 0;
+                            })})})})});
+                            return;
+                        }
+                        if ((this.page >= 10001 && this.page < 11000)) {
+                            this.multi.resultHasProceed = true; ++this.multi.fc;
+                            ElMessage.error('操作失败! Time=' + (new Date().toISOString()));
+                            tickManager.nextTick(() => { tickManager.nextTick(() => { tickManager.nextTick(() => { tickManager.nextTick(() => { tickManager.nextTick(() => { tickManager.nextTick(() => { tickManager.nextTick(() => { tickManager.nextTick(() => { tickManager.nextTick(() => { tickManager.nextTick(() => {
+                                this.multi.stat = 0;
+                            })})})})})})})})})});
+                            return;
+                        }
+                    });
+                        break;
+
+                    default:
+                        return ElMessage.error('请选择操作类型');
+                }
+            }
         },
 
         openLogViewer(catalog) {
@@ -376,6 +460,11 @@ const data = {
                 this.writePage = 'multiple';
             }
         });
+    },
+    unmounted() {
+        if (this.multi.interval) {
+            clearInterval(this.multi.interval); this.multi.interval = 0;
+        }
     },
 
     template: await getHTML(import.meta.url, componentId),
